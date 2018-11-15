@@ -16,7 +16,7 @@ class TEStribute_Interface:
         self.random_lb = Random_LB()
         self.task_stat_lb = Task_Stat_LB()
 
-    def order_endpoint_list(self, tes_json: dict, endpoints: List[str], access_token: str=None, method: LB_Algorithms=LB_Algorithms.TASK_STAT) -> List[str]:
+    def order_endpoint_list(self, tes_json: dict, endpoints: List[str], access_token: str=None, method: str="TASK_STAT") -> List[str]:
         """
 
         :param tes_json: TES object in json as dict
@@ -25,6 +25,8 @@ class TEStribute_Interface:
         :param method: method to use for LB
         :return: ordered list of endpoints with most best one first
         """
+
+        method =LB_Algorithms[method]
         checked_endpoints = self.endpoint_checker.check_endpoint_list(endpoints, token=access_token)
         final_endpoints = checked_endpoints[0].keys()
 
