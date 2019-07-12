@@ -1,2 +1,2 @@
-requests==2.20.1
--e git+https://github.com/ohsu-comp-bio/py-tes.git@199604418f06d72fd5fd200ed67f3cc223d4544a#egg=py-tes
+-e git+https://github.com/elixir-europe/TES-cli.git@Client_Update#egg=tes_client
+-e git+https://github.com/elixir-europe/DRS-cli.git@client_update#egg=drs_client
