@@ -1,7 +1,10 @@
-from drs_client_module import fetchDataObject
-from tes_client_module import fetchTasksInfo
+from drs_client_module import check_data_objects
+from tes_client_module import fetch_tasks_info
 
-from distance import ReturnDistance
+from compute_costs import sum_costs
+
+from distance import return_distance
+
 
 tes_url = "http://193.166.24.111/ga4gh/tes/v1/"
 drs_url = "http://193.166.24.114/ga4gh/drs/v1"
@@ -11,9 +14,6 @@ if __name__ == "__main__":
     """
     use functions defined
     """
-    DRS_response = fetchDataObject(drs_url, "a001")
-    TES_response = fetchTasksInfo(tes_url, 4, 8, 10, True, [], 12)
 
-    print(ReturnDistance("131.152.229.71", "ftp.ensembl.org"))
-    print(TES_response)
-    print(DRS_response)
+    print(fetch_tasks_info(tes_url, 4, 12, 8, 20))
+    check_data_objects(drs_url, ["a001", "a002", "a003"])

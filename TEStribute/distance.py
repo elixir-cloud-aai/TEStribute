@@ -1,9 +1,19 @@
-import geopy.distance
-from ip2geotools.databases.noncommercial import DbIpCity
+"""
+To deal with all distance calculations needed by the TESTribute
+"""
 import socket
 
+import geopy.distance
+from ip2geotools.databases.noncommercial import DbIpCity
 
-def ReturnDistance(ip1, ip2):
+
+def return_distance(ip1, ip2):
+    """
+    :param ip1: string ip/url
+    :param ip2: string ip/url
+    :return: a dict containing the locations of both input addresses &
+            the physical distance between them in km's
+    """
 
     ip1 = DbIpCity.get(socket.gethostbyname(ip1), api_key="free")
     ip2 = DbIpCity.get(socket.gethostbyname(ip2), api_key="free")
@@ -24,4 +34,3 @@ def ReturnDistance(ip1, ip2):
         },
         'distance': geopy.distance.geodesic(coords_1, coords_2).km,
     }
-
