@@ -1,11 +1,12 @@
 """ Contains all functions to interact with the TES Service
 """
+from typing import Dict
 from tes_client import Client
 
-
+# switch to receiving prams as **kwargs if possible
 def fetch_tasks_info(
-        tes_url, cpu_cores, ram_gb, disk_gb, execution_time_min, preemtible=True, zones=[]
-        ):
+        tes_url: str, cpu_cores, ram_gb, disk_gb, execution_time_min, preemtible=True, zones=None
+        ) -> Dict:
     """
     :param tes_url: url path of the Task Execution Schema service
     :param cpu_cores: number of cores required by the task

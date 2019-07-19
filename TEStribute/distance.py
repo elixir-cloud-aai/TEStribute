@@ -3,11 +3,13 @@ To deal with all distance calculations needed by the TESTribute
 """
 import socket
 
+from typing import Dict
+
 import geopy.distance
 from ip2geotools.databases.noncommercial import DbIpCity
 
 
-def return_distance(ip1, ip2):
+def return_distance( ip1: str, ip2: str) -> Dict:
     """
     :param ip1: string ip/url
     :param ip2: string ip/url
