@@ -33,7 +33,6 @@ def check_data_objects(drs_url: str, required_files: Union[List, Set, Tuple]) ->
     try:
         for obj_id in required_files:
             objects_info[obj_id] = fetch_data_object(client, obj_id)
-            print(objects_info)
     except HTTPNotFound:
         return {}
 

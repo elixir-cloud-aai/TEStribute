@@ -2,11 +2,9 @@
 tes-services:
   tes-Switzerland: "http://131.152.229.70/ga4gh/tes/v1/"
   tes-Finland: "http://193.166.24.111/ga4gh/tes/v1/"
-  tes-local: "http://0.0.0.0:9001/ga4gh/tes/v1"
 
 #Available DRS-Services
 drs-services:
-  drs-Switzerland: "http://131.152.229.70/ga4gh/drs/v1/"
-  drs-Finland: "http://193.166.24.111/ga4gh/drs/v1/"
-  drs-local: "http://0.0.0.0:9101/ga4gh/drs/v1"
+  drs-Switzerland: "http://131.152.229.71/ga4gh/drs/v1/"
+  drs-Finland: "http://193.166.24.114/ga4gh/drs/v1/"
 
