@@ -1,6 +1,7 @@
 """
 Functions to compute costs associated with tasks
 """
+import logging
 from typing import Dict
 
 from distance import return_distance
@@ -37,6 +38,9 @@ def sum_costs(
     :param tes_url: url of the TES service w.r.t which drs is being computed
     :return:
     """
+    # get logger
+    logger = logging.getLogger("TES_logger")
+
     drs_costs = {}
     for drs_url, object_info in drs_data.items():
         drs_costs[drs_url] = transfer_costs(data_transfer_rate, object_info, tes_url)
@@ -45,5 +49,5 @@ def sum_costs(
     #  check for currency
     response = drs_costs
     response["tes_costs"] = total_costs
-
+    logger.debug("costs for tes_url " + tes_url + "are :"+str(response))
     return response

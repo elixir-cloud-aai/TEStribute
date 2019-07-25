@@ -1,5 +1,6 @@
 """ Contains all functions to interact with the TES Service
 """
+import logging
 from typing import Dict
 from tes_client import Client
 
@@ -18,6 +19,9 @@ def fetch_tasks_info(
 
     :return: a dict with associated costs & rates (in cases where cost is not computed by TES)
     """
+    # get logger
+    logger = logging.getLogger("TESTribute_logger")
+
     client = Client.Client(tes_url)
     response = client.GetTaskInfo(
         cpu_cores, ram_gb, disk_gb, preemtible, zones, execution_time_min

@@ -16,16 +16,18 @@ def config_parser(
     :param default_path: path to config file
     :return: dict from yaml config
     """
+    logger = logging.getLogger("TESTribute_logger")
     try:
         with open(default_path) as f:
             config = yaml.safe_load(f)
-    except (FileNotFoundError, PermissionError) as e:
+            logger.debug("config loaded from"+ default_path)
+    except (FileNotFoundError, PermissionError) as error:
         logging.error(
             (
                 "Config file not found. Ensure that default config file is "
                 "available and accessible at '{default_path}'."
                 " Execution aborted. "
                 "Original error message: {type}: {msg}"
-            ).format(default_path=default_path, type=type(e).__name__, msg=e)
+            ).format(default_path=default_path, type=type(error).__name__, msg=error)
         )
     return config

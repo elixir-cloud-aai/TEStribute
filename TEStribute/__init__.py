@@ -13,18 +13,17 @@ from compute_costs import sum_costs
 from drs_client_module import check_data_objects
 from tes_client_module import fetch_tasks_info
 
-#to-do :
-# configure the logger
-logging.basicConfig(filename='test_logging.log',level=logging.DEBUG)
+from log.logging_functions import setup_logger
 
 
-def rank_tasks(task: Dict, choice: str, choice_weight: float = 0.5) -> Dict:
+def rank_services(task: Dict, choice: str, choice_weight: float = 0.5) -> Dict:
     """
     :param task: dict of tes_task
     :param choice: choice between cost or time for optimisation
     :param choice_weight: weightage to choice
     :return: an ordered list of TES & DRS available endpoints in
     """
+    logger = setup_logger("TESTribute_logger", "log/tes_log.log", logging.DEBUG)
     # list available DRS & TES instances
     config = config_parser()
 
@@ -32,9 +31,9 @@ def rank_tasks(task: Dict, choice: str, choice_weight: float = 0.5) -> Dict:
     if choice.lower() not in ["cost", "time", "randomise"]:
         raise TypeError("should be one of : cost ,time or randomise")
 
-    #
     try:
         resources = task["resources"]
+        logger.info("provided resources :" + str(resources))
     except KeyError:
         raise KeyError("task must contain resources")
 
@@ -53,9 +52,11 @@ def rank_tasks(task: Dict, choice: str, choice_weight: float = 0.5) -> Dict:
     """
     usable_drs = {}
     for name, url in drs_services.items():
-        available_data = check_data_objects(url, [x['name'] for x in inputs])
+        available_data = check_data_objects(url, [x["name"] for x in inputs])
         if available_data != {}:
             usable_drs[url] = available_data
+
+    logger.info("usable drs :" + str(usable_drs))
 
     for name, tes_url in tes_services.items():
         cpu_cores = resources["cpu_cores"]
@@ -67,17 +68,21 @@ def rank_tasks(task: Dict, choice: str, choice_weight: float = 0.5) -> Dict:
             tasks_info = fetch_tasks_info(
                 tes_url, cpu_cores, ram_gb, disk_gb, execution_time_min
             )
-            cost = sum_costs(tasks_info['costs_total'],tasks_info['costs_data_transfer'], usable_drs, tes_url)
-            #to-do :
+            cost = sum_costs(
+                tasks_info["costs_total"],
+                tasks_info["costs_data_transfer"],
+                usable_drs,
+                tes_url,
+            )
+            # to-do :
             # save & order costs
-            logging.info(cost)
-            logging.debug("Cost for the TES is :" + str(cost))
+            logger.info("Cost for the TES is :" + str(cost))
         except MissingSchema:
             logging.error("Service not active " + name + "at" + url)
 
 
 if __name__ == "__main__":
-    rank_tasks(
+    rank_services(
         {
             "resources": {
                 "cpu_cores": 2,
@@ -85,13 +90,11 @@ if __name__ == "__main__":
                 "disk_gb": 8,
                 "execution_time_min": 20,
             },
-            "inputs": [
-                {'name':'a001', 'url':''}
-            ],
+            "inputs": [{"name": "a001", "url": ""}],
             "outputs": [
-                {'name':'op1', 'url':'https://summerofcode.withgoogle.com/'},
-                {'name':'op2', 'url':'https://stackoverflow.com'}
-            ]
+                {"name": "op1", "url": "https://summerofcode.withgoogle.com/"},
+                {"name": "op2", "url": "https://stackoverflow.com"},
+            ],
         },
         "cost",
         0.23,
