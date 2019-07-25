@@ -1,3 +1,7 @@
+#Ignore files from editor
 .idea/*
+#Ignore pycache
 *.pyo
 *.pyc
+#Ignore logging files
+*.log

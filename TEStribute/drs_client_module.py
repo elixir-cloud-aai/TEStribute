@@ -1,5 +1,7 @@
 """ Contains all functions to interact with the DRS
 """
+import logging
+
 from typing import Dict, List, Set, Tuple, Union
 from bravado.exception import HTTPNotFound
 
@@ -27,13 +29,15 @@ def check_data_objects(drs_url: str, required_files: Union[List, Set, Tuple]) ->
     :return: should return the status of the data objects, access at the endpoint &
              the data if all objects exist
     """
+    # get logger
+    logger = logging.getLogger("TESTribute_logger")
+
     client = Client.Client(drs_url)
     objects_info = {}
 
     try:
         for obj_id in required_files:
             objects_info[obj_id] = fetch_data_object(client, obj_id)
-            print(objects_info)
     except HTTPNotFound:
         return {}
 
