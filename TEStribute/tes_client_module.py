@@ -1,12 +1,21 @@
 """ Contains all functions to interact with the TES Service
 """
 import logging
-from typing import Dict
+
 from tes_client import Client
+from typing import Dict
+
+logger = logging.getLogger("TESTribute_logger")
 
 # switch to receiving prams as **kwargs if possible
 def fetch_tasks_info(
-        tes_url: str, cpu_cores, ram_gb, disk_gb, execution_time_min, preemtible=True, zones=None
+        tes_url: str,
+        cpu_cores: int,
+        ram_gb: float,
+        disk_gb: float,
+        execution_time_min: float,
+        preemtible=True,
+        zones=None
         ) -> Dict:
     """
     :param tes_url: url path of the Task Execution Schema service
@@ -16,12 +25,8 @@ def fetch_tasks_info(
     :param preemtible: True/False for if the task can be run on preemtible
     :param zones: an array of the zones the task can be run on
     :param execution_time_min: time in minutes needed for the execution of the task
-
     :return: a dict with associated costs & rates (in cases where cost is not computed by TES)
     """
-    # get logger
-    logger = logging.getLogger("TESTribute_logger")
-
     client = Client.Client(tes_url)
     response = client.GetTaskInfo(
         cpu_cores, ram_gb, disk_gb, preemtible, zones, execution_time_min
