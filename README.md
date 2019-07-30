@@ -28,6 +28,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Install app
+
+```bash
+python setup.py develop
+```
+
 ## Usage
 
 ```bash
@@ -37,6 +43,5 @@ python __init__.py
 
 ## Current functionality
 
-The `main()` function defined in `__init__.py` defines a test case for function
-`rank_services()` which returns a dict of rank-ordered TES & DRS services for a
-given task. The service writes logging information to a file `log/tes_log.log`.
+When supplied without any arguments, the `rank_services()` function defined in
+`__init__.py` uses default values from a config file in `config/config.yaml`.

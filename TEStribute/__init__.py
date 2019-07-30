@@ -1,11 +1,12 @@
 """
-exposes the function of TESTribute i.e the task distribution function
+Exposes TEStribute main function rank_services()
 """
 import logging
+import os
+from requests.exceptions import MissingSchema
 from typing import Dict, List, Union
 
 from drs_client_module import check_data_objects
-from requests.exceptions import MissingSchema
 from tes_client_module import fetch_tasks_info
 
 from TEStribute.compute_costs import sum_costs
@@ -13,7 +14,16 @@ from TEStribute.config.parse_config import config_parser, set_defaults
 from TEStribute.log.logging_functions import setup_logger
 from TEStribute.modes import Mode
 
-logger = setup_logger("TESTribute_logger", "log/tes_log.log", logging.DEBUG)
+# Set up logging
+log_file = os.path.abspath(
+    os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        "log",
+        "testribute.log"
+    )
+)
+logger = setup_logger("TEStribute", log_file, logging.DEBUG)
+
 
 def rank_services(
     drs_ids: Union[List, None] = None,
@@ -54,6 +64,7 @@ def rank_services(
             `drs_instances`, whether there are particular constraints or
             special provisions in place that apply to the user (e.g., custom
             princes). Currently not implemented.
+
     :return: an ordered list of dictionaries of TES and DRS instances; inner
             dictionaries are of the form:
                 {
@@ -103,6 +114,9 @@ def rank_services(
         logger.error("No TES instances available.")
     if len(drs_ids) and not len(drs_uris):
         logger.error("Input files required but no DRS instances available.")
+
+    ## Log input parameters
+    logger.info("=== INPUT PARAMETERS ===")
 
     # Log run mode
     logger.info("Run mode:")
@@ -165,7 +179,7 @@ def rank_services(
 
 def _sanitize_mode(
     mode: Union[float, int, Mode, None, str] = None
-) -> Union[float, Mode, None]:
+) -> Union[float, None]:
     """
     Validates, sanitizes and returns run mode.
 
@@ -175,6 +189,7 @@ def _sanitize_mode(
             - one of integers -1, 0, 1
             - a float between 0 and 1
             - None
+
     :return: sanitized mode which is either of type `mode.Mode`, a float
             between 0 and 1 or `None`. The latter is also returned if an
             invalid value is passed.
@@ -186,12 +201,12 @@ def _sanitize_mode(
     
     # Check if `Mode` instance
     if isinstance(mode, Mode):
-        return mode
+        return float(mode.value)
     
     # Check if `Mode` key
     if isinstance(mode, str):
         try:
-            return(Mode[mode])
+            return(float(Mode[mode].value))
         except KeyError:
             logger.warning(
                 (
@@ -203,7 +218,7 @@ def _sanitize_mode(
     # Check if `Mode` value
     if isinstance(mode, int):
         try:
-            return(Mode(mode))
+            return(float(mode))
         except ValueError:
             logger.warning(
                 (

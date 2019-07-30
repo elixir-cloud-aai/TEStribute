@@ -6,6 +6,7 @@ from typing import Dict
 
 from distance import return_distance
 
+logger = logging.getLogger("TEStribute")
 
 def transfer_costs(rate: Dict, drs: Dict, tes_url="string"):
     """
@@ -15,10 +16,10 @@ def transfer_costs(rate: Dict, drs: Dict, tes_url="string"):
     distance = 0  # km
     size = 0  # bytes
 
-    # to-do :
-    #  implement such that different data objects from different drs
-    #  based on the weightage we get to cost & time as input
-    for obj_id, info in drs.items():
+    # TODO:
+    # - implement such that different data objects from different drs based on
+    #   the weight we get to cost & time as input
+    for info in drs.values():
         location_info = return_distance(
             info["access_methods"][0]["access_url"]["url"], tes_url
         )
@@ -36,17 +37,14 @@ def sum_costs(
     :param data_transfre_rate: cost from TES
     :param drs_data:
     :param tes_url: url of the TES service w.r.t which drs is being computed
+
     :return:
     """
-    # get logger
-    logger = logging.getLogger("TES_logger")
-
     drs_costs = {}
     for drs_url, object_info in drs_data.items():
         drs_costs[drs_url] = transfer_costs(data_transfer_rate, object_info, tes_url)
 
-    # to-do :
-    #  check for currency
+    # TODO: check for currency
     response = drs_costs
     response["tes_costs"] = total_costs
     logger.debug("costs for tes_url " + tes_url + "are :"+str(response))

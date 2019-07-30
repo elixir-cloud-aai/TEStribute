@@ -6,11 +6,14 @@ import logging
 from typing import Any, Dict
 import yaml
 
-logger = logging.getLogger("TESTribute_logger")
+logger = logging.getLogger("TEStribute")
 
 def config_parser(
     default_path: str = os.path.abspath(
-        os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.yaml")
+        os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "config.yaml"
+        )
     )
 ) -> Dict:
     """
