@@ -1,20 +1,36 @@
 """
-to accomodate for configuration of logging
+Logging configuration
 """
 import logging
+import sys
 
-
-def setup_logger(name, log_file, level=logging.INFO):
-    """Function setup as loggers as you want"""
-
-    handler = logging.FileHandler(log_file)
-    handler.setFormatter(
-        logging.Formatter(
-            "[%(asctime)s] [%(filename)s:%(lineno)s - %(funcName)5s()] %(message)s"
-        )
-    )
+def setup_logger(
+    name: str,
+    log_file: str,
+    level: int = logging.INFO
+) -> logging.Logger:
+    """Set up logger"""
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    logger.addHandler(handler)
+
+    if not logger.handlers:
+
+        # Add stream handler for STDERR
+        stream = logging.StreamHandler(sys.stderr)
+        stream.setFormatter(
+            logging.Formatter(
+                "[%(asctime)s: %(levelname)s] %(message)s"
+            )
+        )
+        logger.addHandler(stream)
+
+        # Add file handler
+        fl = logging.FileHandler(log_file)
+        fl.setFormatter(
+            logging.Formatter(
+                 "[%(asctime)s: %(levelname)s] [%(filename)s:%(lineno)s - %(funcName)5s()] %(message)s"
+            )
+        )
+        logger.addHandler(fl)
 
     return logger

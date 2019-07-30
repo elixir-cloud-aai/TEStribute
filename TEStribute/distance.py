@@ -1,29 +1,28 @@
 """
-To deal with all distance calculations needed by the TESTribute
+Functions dealing with the calculation of the distance between IP addresses
 """
 import logging
 import socket
 import time
 from typing import Dict
-from urllib.parse import urlparse
 
 from geopy.distance import geodesic
 from ip2geotools.databases.noncommercial import DbIpCity
+from urllib.parse import urlparse
 
+logger = logging.getLogger("TEStribute")
 
 def return_distance(ip1: str, ip2: str) -> Dict:
     """
     :param ip1: string ip/url
     :param ip2: string ip/url
+
     :return: a dict containing the locations of both input addresses &
     the physical distance between them in km's
     """
     start = time.time()
-    # get logger
-    logger = logging.getLogger("TESTribute_logger")
 
-    # to-do :
-    #       except error for localhost
+    # TODO: except error for localhost
     ip1 = DbIpCity.get(socket.gethostbyname(urlparse(ip1).netloc), api_key="free")
     ip2 = DbIpCity.get(socket.gethostbyname(urlparse(ip2).netloc), api_key="free")
 
@@ -37,7 +36,9 @@ def return_distance(ip1: str, ip2: str) -> Dict:
     }
 
     end = time.time()
+
     logger.debug(
         str(response) + "time taken for calculation :" + str(end - start) + " seconds"
     )
+
     return response
