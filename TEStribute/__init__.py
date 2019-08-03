@@ -6,7 +6,7 @@ import os
 from requests.exceptions import MissingSchema
 from typing import Dict, List, Union
 
-from drs_client_module import check_data_objects
+from drs_client_module import check_data_object
 from tes_client_module import fetch_tasks_info
 
 from TEStribute.compute_costs import sum_costs
@@ -149,12 +149,10 @@ def rank_services(
     #   this is not required; according to the return value of `rank_service()`,
     #   DRS instances _can and should_ be used for different files, if it is 
     #   faster / more economical.
-    usable_drs = {}
-    for url in drs_uris:
-        response = check_data_objects(url, drs_ids)
-        if response is not {}:
-            usable_drs[url] = response
-    logger.info("usable drs :" + str(usable_drs))
+    drs_object_locations = {}
+    for drs_id in drs_ids:
+        id_locations = check_data_object(drs_id, drs_uris)
+        drs_object_locations[drs_id] = id_locations
 
     # Get task queue time and cost estimates from TES instances
     for url in tes_uris:
@@ -169,7 +167,7 @@ def rank_services(
     cost = sum_costs(
         tasks_info["costs_total"],
         tasks_info["costs_data_transfer"],
-        usable_drs,
+        drs_object_locations,
         url,
     )
     # to-do :
