@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 logger = logging.getLogger("TEStribute")
 
+
 def return_distance(ip1: str, ip2: str) -> Dict:
     """
     :param ip1: string ip/url
@@ -39,7 +40,7 @@ def return_distance(ip1: str, ip2: str) -> Dict:
 
     # TODO:
     #  fix logger output
-    #logger.debug(
+    # logger.debug(
     #    str(response) + "time taken for calculation :" + str(end - start) + " seconds"
     # )
 

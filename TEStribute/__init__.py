@@ -16,11 +16,7 @@ from TEStribute.modes import Mode
 
 # Set up logging
 log_file = os.path.abspath(
-    os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        "log",
-        "testribute.log"
-    )
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "log", "testribute.log")
 )
 logger = setup_logger("TEStribute", log_file, logging.DEBUG)
 
@@ -126,12 +122,12 @@ def rank_services(
     logger.info("Requested resources:")
     for name, value in resource_requirements.items():
         logger.info("- {name}: {value}".format(name=name, value=str(value)))
-    
+
     # Log input file identifiers:
     logger.info("Input file IDs:")
     for drs_id in drs_ids:
         logger.info("- {drs_id}".format(drs_id=drs_id))
-    
+
     # Log known TES instances
     logger.info("TES instances:")
     for tes in tes_uris:
@@ -141,7 +137,6 @@ def rank_services(
     logger.info("DRS instances:")
     for drs in drs_uris:
         logger.info("- {drs}".format(drs=drs))
-
 
     drs_object_locations = {}
     for drs_id in drs_ids:
@@ -160,11 +155,8 @@ def rank_services(
 
     for uri, info in tes_info.items():
         tes_info[uri] = sum_costs(
-                info["costs_total"],
-                info["costs_data_transfer"],
-                drs_object_locations,
-                uri,
-            )
+            info["costs_total"], info["costs_data_transfer"], drs_object_locations, uri
+        )
 
     # TODO : save & order costs
     """
@@ -202,48 +194,47 @@ def _sanitize_mode(
     if mode is None:
         logger.warning("Run mode undefined. No mode value passed.")
         return None
-    
+
     # Check if `Mode` instance
     if isinstance(mode, Mode):
         return float(mode.value)
-    
+
     # Check if `Mode` key
     if isinstance(mode, str):
         try:
-            return(float(Mode[mode].value))
+            return float(Mode[mode].value)
         except KeyError:
             logger.warning(
-                (
-                    "Run mode undefined. Unknown mode key passed: {mode}"
-                ).format(mode=mode.lower())
+                ("Run mode undefined. Unknown mode key passed: {mode}").format(
+                    mode=mode.lower()
+                )
             )
             return None
-    
+
     # Check if `Mode` value
     if isinstance(mode, int):
         try:
-            return(float(mode))
+            return float(mode)
         except ValueError:
             logger.warning(
-                (
-                    "Run mode undefined. Invalid mode value passed: {mode}"
-                ).format(mode=mode)
+                ("Run mode undefined. Invalid mode value passed: {mode}").format(
+                    mode=mode
+                )
             )
             return None
-    
+
     # Check if allowed float
     if isinstance(mode, float):
         if mode < 0 or mode > 1:
             logger.warning(
                 (
-                    "Run mode undefined. Out of bounds mode value passed: "
-                    "{mode}"
+                    "Run mode undefined. Out of bounds mode value passed: " "{mode}"
                 ).format(mode=mode)
             )
             return None
         else:
             return mode
-        
+
 
 if __name__ == "__main__":
     rank_services()

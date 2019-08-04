@@ -41,7 +41,6 @@ def sum_costs(
 
     :return:
     """
-    drs_costs = {}
     obj_size = defaultdict(dict)
     drs_info = defaultdict(dict)
     for obj_id, drs_uris in drs_objects_locations.items():
@@ -59,7 +58,10 @@ def sum_costs(
     for drs_id, drs_info in drs_info.items():
         for drs_uri, object_info in drs_info.items():
             return_info[drs_id][drs_uri] = transfer_costs(
-                total_costs, tes_url, data_transfer_rate, object_info, obj_size[drs_id][drs_uri]
-                )
-    return drs_info
+                total_costs,
+                tes_url,
+                data_transfer_rate,
+                object_info,
+                obj_size[drs_id][drs_uri],
+            )
     return return_info
