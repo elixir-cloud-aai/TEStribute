@@ -142,37 +142,43 @@ def rank_services(
     for drs in drs_uris:
         logger.info("- {drs}".format(drs=drs))
 
-    # Get input file information from DRS instances
-    # DRS instances not giving access to any of the input files are discarded
-    # TODO:
-    # - I think currently it is checked whether ALL files exist at any one DRS,
-    #   this is not required; according to the return value of `rank_service()`,
-    #   DRS instances _can and should_ be used for different files, if it is 
-    #   faster / more economical.
+
     drs_object_locations = {}
     for drs_id in drs_ids:
         id_locations = check_data_object(drs_id, drs_uris)
         drs_object_locations[drs_id] = id_locations
 
+    tes_info = {}
     # Get task queue time and cost estimates from TES instances
     for url in tes_uris:
         try:
-            tasks_info = fetch_tasks_info(
+            tes_info[url] = fetch_tasks_info(
                 url, cpu_cores, ram_gb, disk_gb, execution_time_min
             )
         except MissingSchema:
             logging.error("Service not active " + name + "at" + url)
 
-    # TODO: This should go into a function and implemented properly
-    cost = sum_costs(
-        tasks_info["costs_total"],
-        tasks_info["costs_data_transfer"],
-        drs_object_locations,
-        url,
-    )
-    # to-do :
-    # save & order costs
-    logger.info("Cost for the TES is :" + str(cost))
+    for uri, info in tes_info.items():
+        tes_info[uri] = sum_costs(
+                info["costs_total"],
+                info["costs_data_transfer"],
+                drs_object_locations,
+                uri,
+            )
+
+    # TODO : save & order costs
+    """
+    required output format
+    {
+        "rank": "integer",
+        "TES": "TES_URL",
+        [drs_id]: "DRS_URL",
+        [drs_id]: "DRS_URL",
+        ...
+            "output_files": "DRS_URL",
+    }
+    """
+    return tes_info
 
 
 def _sanitize_mode(

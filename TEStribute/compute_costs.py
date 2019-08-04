@@ -10,7 +10,7 @@ from distance import return_distance
 logger = logging.getLogger("TEStribute")
 
 
-def transfer_costs(tes_url: "string", rate: Dict, drs: Dict, size: "float"):
+def transfer_costs(total_cost, tes_url: "string", rate: Dict, drs: Dict, size: "float"):
     """
     :param tes_url: string of the tes uri endpoint
     :param rate: Dict rate in format {"rate":,"currency:} rate in units per 1000 km
@@ -23,7 +23,10 @@ def transfer_costs(tes_url: "string", rate: Dict, drs: Dict, size: "float"):
         distance = return_distance(accessinfo["url"], tes_url)
         cost = float(size << 30) * distance["distance"] * rate["amount"]
         accessinfo["cost"] = {cost, rate["currency"]}
-
+        if rate["currency"] == total_cost["currency"]:
+            accessinfo["total_cost"] = total_cost["amount"] + cost
+        # TODO:
+        # implement the else
     return accessinfo
 
 
@@ -33,12 +36,11 @@ def sum_costs(
     """
     :param total_costs: the total cost according to computational cost requirements given to the TES endpoint
     :param data_transfer_rate: cost from TES
-    :param drs_data:
+    :param drs_data: Dict contaning
     :param tes_url: url of the TES service w.r.t which drs is being computed
 
     :return:
     """
-
     drs_costs = {}
     obj_size = defaultdict(dict)
     drs_info = defaultdict(dict)
@@ -53,18 +55,11 @@ def sum_costs(
             ]
             obj_size[obj_id][drs_uri] = access_info["size"]
 
+    return_info = defaultdict(dict)
     for drs_id, drs_info in drs_info.items():
         for drs_uri, object_info in drs_info.items():
-            drs_info[drs_uri] = transfer_costs(
-                 tes_url, data_transfer_rate, object_info, obj_size[drs_id][drs_uri]
+            return_info[drs_id][drs_uri] = transfer_costs(
+                total_costs, tes_url, data_transfer_rate, object_info, obj_size[drs_id][drs_uri]
                 )
-
-    logger.debug(drs_info)
     return drs_info
-    """
-    # TODO: check for currency
-    response = drs_costs
-    response["tes_costs"] = total_costs
-    logger.debug("costs for tes_url " + tes_url + "are :"+str(response))
-    return response
-    """
+    return return_info
