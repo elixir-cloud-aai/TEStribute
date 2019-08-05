@@ -10,6 +10,7 @@ from distance import return_distance
 logger = logging.getLogger("TEStribute")
 
 
+def transfer_costs(tes_url: "string", rate: Dict, drs: Dict, size: "float"):
     """
     :param tes_url: string of the tes uri endpoint
     :param rate: Dict rate in format {"rate":,"currency:} rate in units per 1000 km
@@ -20,26 +21,22 @@ logger = logging.getLogger("TEStribute")
     # considering more than one "access_methods" are provided
     for accessinfo in drs:
         distance = return_distance(accessinfo["url"], tes_url)
-        cost = float(size << 30) * distance["distance"] * rate["amount"]
-        accessinfo["cost"] = {cost, rate["currency"]}
-        if rate["currency"] == total_cost["currency"]:
-            accessinfo["total_cost"] = total_cost["amount"] + cost
-        # TODO:
-        # implement the else
-    return accessinfo
+        cost = round(size / 1000000000000, 7) * distance["distance"] * rate["amount"]
+        accessinfo["cost"] = cost
+        accessinfo["currency"] = rate["currency"]
+
+    return sorted(drs, key=lambda i: i["cost"])
 
 
-def sum_costs(
-    total_costs, data_transfer_rate: Dict, drs_objects_locations: Dict, tes_url: str
-) -> Dict:
+def sum_costs(data_transfer_rate: Dict, drs_objects_locations: Dict, tes_url: str) -> Dict:
     """
-    :param total_costs: the total cost according to computational cost requirements given to the TES endpoint
     :param data_transfer_rate: cost from TES
-    :param drs_data: Dict contaning
+    :param drs_objects_locations: Dict contaning
     :param tes_url: url of the TES service w.r.t which drs is being computed
 
     :return:
     """
+
     obj_size = defaultdict(dict)
     drs_info = defaultdict(dict)
     for obj_id, drs_uris in drs_objects_locations.items():
@@ -55,12 +52,17 @@ def sum_costs(
 
     return_info = defaultdict(dict)
     for drs_id, drs_info in drs_info.items():
+        sum_drs = 0
         for drs_uri, object_info in drs_info.items():
+            # only the one with the lowest cost is kept
             return_info[drs_id][drs_uri] = transfer_costs(
-                total_costs,
-                tes_url,
-                data_transfer_rate,
-                object_info,
-                obj_size[drs_id][drs_uri],
-            )
+                tes_url, data_transfer_rate, object_info, obj_size[drs_id][drs_uri]
+            )[0]
+            sum_drs = return_info[drs_id][drs_uri]["cost"] + sum
+            currency = return_info[drs_id][drs_uri]["currency"]
+            # check for currency needed
+        return_info[drs_id] = sorted(
+            return_info[drs_id].items(), key=lambda x: x[1]["cost"]
+        )
+        return_info.update({"drs_costs": {"amount": sum_drs, "currency": currency}})
     return return_info
