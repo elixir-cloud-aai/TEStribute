@@ -58,7 +58,7 @@ def sum_costs(data_transfer_rate: Dict, drs_objects_locations: Dict, tes_url: st
             return_info[drs_id][drs_uri] = transfer_costs(
                 tes_url, data_transfer_rate, object_info, obj_size[drs_id][drs_uri]
             )[0]
-            sum_drs = return_info[drs_id][drs_uri]["cost"] + sum
+            sum_drs = return_info[drs_id][drs_uri]["cost"] + sum_drs
             currency = return_info[drs_id][drs_uri]["currency"]
             # check for currency needed
         return_info[drs_id] = sorted(
