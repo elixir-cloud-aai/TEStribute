@@ -10,7 +10,6 @@ from distance import return_distance
 logger = logging.getLogger("TEStribute")
 
 
-def transfer_costs(total_cost, tes_url: "string", rate: Dict, drs: Dict, size: "float"):
     """
     :param tes_url: string of the tes uri endpoint
     :param rate: Dict rate in format {"rate":,"currency:} rate in units per 1000 km

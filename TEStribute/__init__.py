@@ -111,7 +111,7 @@ def rank_services(
     if len(drs_ids) and not len(drs_uris):
         logger.error("Input files required but no DRS instances available.")
 
-    ## Log input parameters
+    # Log input parameters
     logger.info("=== INPUT PARAMETERS ===")
 
     # Log run mode
@@ -153,12 +153,24 @@ def rank_services(
         except MissingSchema:
             logging.error("Service not active " + name + "at" + url)
 
+    # tes_info_drs will have all the drs costs & info for each TES
+    tes_info_drs = {}
     for uri, info in tes_info.items():
-        tes_info[uri] = sum_costs(
-            info["costs_total"], info["costs_data_transfer"], drs_object_locations, uri
+        tes_info_drs[uri] = sum_costs(
+            info["costs_data_transfer"], drs_object_locations, uri
         )
 
-    # TODO : save & order costs
+    # TODO : iterate though TES instances & each of their drs objects to total the costs & times and rank
+    for i in tes_info.keys():
+        logger.debug("for tes " + i)
+        logger.debug("=== RAKING OF TES TO BE BASED ON ==")
+        logger.debug("queue time")
+        logger.debug(tes_info[i]["queue_time"])
+        logger.debug("total drs costs after choosing cheapest drs for each object")
+        logger.debug(tes_info_drs[i]["drs_costs"])
+        logger.debug("total tes costs")
+        logger.debug(tes_info[i]["costs_total"])
+
     """
     required output format
     {
