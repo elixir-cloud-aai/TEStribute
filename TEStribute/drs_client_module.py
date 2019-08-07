@@ -11,40 +11,39 @@ from drs_client import Client
 logger = logging.getLogger("TEStribute")
 
 
-def check_data_object(drs_id: str, drs_uris: Union[List, Set, Tuple]) -> Dict:
+def get_available_accessinfo(drs_url: str, drs_ids: Union[List, Set, Tuple]) -> Dict:
     """
+    the function to return the available access information for a iterable object of drs_id's given at the DRS service
+    at the specified url
+
     :param drs_uris:
     :param drs_id:
 
     :return: dict containing the uris at with the drs objects can be found
     """
-    options_available = {}
-    for drs_url in drs_uris:
-        client = Client.Client(drs_url)
+
+    # TO-DO: incase drs is offline log & handle
+    client = Client.Client(drs_url)
+    objects_available = {}
+    for drs_id in drs_ids:
         # TO-DO : cross check checksum for object
-        access_options = fetch_data_object(client, drs_id)
+        access_options = fetch_object_metadata(client, drs_id)
         if access_options != {}:
-            options_available[drs_url] = access_options
-
-    if options_available == {}:
-        logger.warning(drs_id + " unavailable at all given instances")
-        return {}
-
-    # TO-DO: log_in different lines
-    logger.info(drs_id + " is available at :")
-    for drs_uri in list(options_available.keys()):
-        logger.info("- {drs}".format(drs=drs_uri))
-    return options_available
+            objects_available[drs_id] = access_options
+    
+    return objects_available
 
 
-def fetch_data_object(client: Client, object_id: str) -> Dict:
+def fetch_object_metadata(client: Client, object_id: str) -> Dict:
     """
+    Function uses the passed drs id & bravado client to return the object metadata ( limited to the requirements of the
+    logic including the access information, checksums and size of the drs object given at the DRS the client is
+    configured for)
+
     :param client: bravado client configured for drs
     :param object_id: object id needed
 
-    :return: a dict with access information for the url or
-             empty dict
-
+    :return: a dict with filtered response or empty dict in the case where object is not found
     """
     try:
         response = client.GetObject(object_id)
@@ -52,7 +51,7 @@ def fetch_data_object(client: Client, object_id: str) -> Dict:
         return {
             "access_methods": response_dict["access_methods"],
             "checksums": response_dict["checksums"],
-            "size": response_dict["size"]
+            "size": response_dict["size"],
         }
     except HTTPNotFound:
         return {}

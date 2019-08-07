@@ -1,12 +1,13 @@
 """
 Exposes TEStribute main function rank_services()
 """
+from collections import defaultdict
 import logging
 import os
 from requests.exceptions import MissingSchema
 from typing import Dict, List, Union
 
-from drs_client_module import check_data_object
+from drs_client_module import get_available_accessinfo
 from tes_client_module import fetch_tasks_info
 
 from TEStribute.compute_costs import sum_costs
@@ -138,10 +139,14 @@ def rank_services(
     for drs in drs_uris:
         logger.info("- {drs}".format(drs=drs))
 
-    drs_object_locations = {}
-    for drs_id in drs_ids:
-        id_locations = check_data_object(drs_id, drs_uris)
-        drs_object_locations[drs_id] = id_locations
+    drs_object_info = defaultdict(dict)
+    for drs_uri in drs_uris:
+        drs_info = get_available_accessinfo(drs_uri, drs_ids)
+        for drs_id in drs_info:
+            drs_object_info[drs_id].update({drs_uri: drs_info[drs_id]})
+
+    # add a warning for any missing objects
+    logger.warning("DRS objects not found at any services: "+str(list(set(drs_ids) - set(drs_object_info.keys()))))
 
     tes_info = {}
     # Get task queue time and cost estimates from TES instances
@@ -157,11 +162,12 @@ def rank_services(
     tes_info_drs = {}
     for uri, info in tes_info.items():
         tes_info_drs[uri] = sum_costs(
-            info["costs_data_transfer"], drs_object_locations, uri
+            info["costs_data_transfer"], drs_object_info, uri
         )
 
     # TODO : iterate though TES instances & each of their drs objects to total the costs & times and rank
     for i in tes_info.keys():
+        logger.debug("mode : "+str(mode))
         logger.debug("for tes " + i)
         logger.debug("=== RAKING OF TES TO BE BASED ON ==")
         logger.debug("queue time")
