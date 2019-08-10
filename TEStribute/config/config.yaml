@@ -19,6 +19,7 @@ resource_requirements:
 drs_ids:
   - "a001"
   - "a002"
+  - "a007"
 
 # Default mode:
 mode: 0.5

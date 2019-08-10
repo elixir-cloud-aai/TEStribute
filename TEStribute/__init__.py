@@ -1,18 +1,20 @@
 """
 Exposes TEStribute main function rank_services()
 """
+from collections import defaultdict
 import logging
 import os
 from requests.exceptions import MissingSchema
 from typing import Dict, List, Union
 
-from drs_client_module import check_data_objects
+from drs_client_module import get_available_accessinfo
 from tes_client_module import fetch_tasks_info
 
 from TEStribute.compute_costs import sum_costs
 from TEStribute.config.parse_config import config_parser, set_defaults
 from TEStribute.log.logging_functions import setup_logger
 from TEStribute.modes import Mode
+
 
 # Set up logging
 log_file = os.path.abspath(
@@ -115,7 +117,7 @@ def rank_services(
     if len(drs_ids) and not len(drs_uris):
         logger.error("Input files required but no DRS instances available.")
 
-    ## Log input parameters
+    # Log input parameters
     logger.info("=== INPUT PARAMETERS ===")
 
     # Log run mode
@@ -126,12 +128,12 @@ def rank_services(
     logger.info("Requested resources:")
     for name, value in resource_requirements.items():
         logger.info("- {name}: {value}".format(name=name, value=str(value)))
-    
+
     # Log input file identifiers:
     logger.info("Input file IDs:")
     for drs_id in drs_ids:
         logger.info("- {drs_id}".format(drs_id=drs_id))
-    
+
     # Log known TES instances
     logger.info("TES instances:")
     for tes in tes_uris:
@@ -142,39 +144,58 @@ def rank_services(
     for drs in drs_uris:
         logger.info("- {drs}".format(drs=drs))
 
-    # Get input file information from DRS instances
-    # DRS instances not giving access to any of the input files are discarded
-    # TODO:
-    # - I think currently it is checked whether ALL files exist at any one DRS,
-    #   this is not required; according to the return value of `rank_service()`,
-    #   DRS instances _can and should_ be used for different files, if it is 
-    #   faster / more economical.
-    usable_drs = {}
-    for url in drs_uris:
-        response = check_data_objects(url, drs_ids)
-        if response is not {}:
-            usable_drs[url] = response
-    logger.info("usable drs :" + str(usable_drs))
+    drs_object_info = defaultdict(dict)
+    for drs_uri in drs_uris:
+        drs_info = get_available_accessinfo(drs_uri, drs_ids)
+        for drs_id in drs_info:
+            drs_object_info[drs_id].update({drs_uri: drs_info[drs_id]})
 
+    # add a warning for any missing objects
+    logger.warning("DRS objects not found at any services: "+str(list(set(drs_ids) - set(drs_object_info.keys()))))
+
+    tes_info = {}
     # Get task queue time and cost estimates from TES instances
     for url in tes_uris:
         try:
-            tasks_info = fetch_tasks_info(
+            tes_info[url] = fetch_tasks_info(
                 url, cpu_cores, ram_gb, disk_gb, execution_time_min
             )
         except MissingSchema:
             logging.error("Service not active " + name + "at" + url)
 
-    # TODO: This should go into a function and implemented properly
-    cost = sum_costs(
-        tasks_info["costs_total"],
-        tasks_info["costs_data_transfer"],
-        usable_drs,
-        url,
-    )
-    # to-do :
-    # save & order costs
-    logger.info("Cost for the TES is :" + str(cost))
+    # tes_info_drs will have all the drs costs & info for each TES
+    tes_info_drs = {}
+    for uri, info in tes_info.items():
+        tes_info_drs[uri] = sum_costs(
+            data_transfer_rate=info["costs_data_transfer"],
+            drs_objects_locations=drs_object_info,
+            tes_url=uri
+        )
+
+    # TODO : iterate though TES instances & each of their drs objects to total the costs & times and rank
+    for i in tes_info.keys():
+        logger.debug("mode : "+str(mode))
+        logger.debug("for tes " + i)
+        logger.debug("=== RAKING OF TES TO BE BASED ON ==")
+        logger.debug("queue time")
+        logger.debug(tes_info[i]["queue_time"])
+        logger.debug("total drs costs after choosing cheapest drs for each object")
+        logger.debug(tes_info_drs[i]["drs_costs"])
+        logger.debug("total tes costs")
+        logger.debug(tes_info[i]["costs_total"])
+
+    """
+    required output format
+    {
+        "rank": "integer",
+        "TES": "TES_URL",
+        [drs_id]: "DRS_URL",
+        [drs_id]: "DRS_URL",
+        ...
+            "output_files": "DRS_URL",
+    }
+    """
+    return tes_info
 
 
 def _sanitize_mode(
@@ -198,48 +219,41 @@ def _sanitize_mode(
     if mode is None:
         logger.warning("Run mode undefined. No mode value passed.")
         return None
-    
+
     # Check if `Mode` instance
     if isinstance(mode, Mode):
         return float(mode.value)
-    
+
     # Check if `Mode` key
     if isinstance(mode, str):
         try:
-            return(float(Mode[mode].value))
+            return float(Mode[mode].value)
         except KeyError:
             logger.warning(
-                (
-                    "Run mode undefined. Unknown mode key passed: {mode}"
-                ).format(mode=mode.lower())
-            )
+                    "Run mode undefined. Invalid mode value passed: {mode}"
+                ).format(mode=mode)
             return None
-    
+
     # Check if `Mode` value
     if isinstance(mode, int):
         try:
-            return(float(mode))
+            return float(mode)
         except ValueError:
             logger.warning(
-                (
-                    "Run mode undefined. Invalid mode value passed: {mode}"
-                ).format(mode=mode)
-            )
+                "Run mode undefined. Invalid mode value passed: {mode}"
+            ).format( mode=mode)
             return None
-    
+
     # Check if allowed float
     if isinstance(mode, float):
         if mode < 0 or mode > 1:
             logger.warning(
-                (
-                    "Run mode undefined. Out of bounds mode value passed: "
-                    "{mode}"
+                    "Run mode undefined. Out of bounds mode value passed: " "{mode}"
                 ).format(mode=mode)
-            )
             return None
         else:
             return mode
-        
+
 
 if __name__ == "__main__":
     rank_services()

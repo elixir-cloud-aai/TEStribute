@@ -14,7 +14,7 @@ crochet==1.10.0
 cssselect==1.0.3
 decorator==4.4.0
 dicttoxml==1.7.4
-docutils==0.15.1
+docutils==0.15.2
 -e git+https://github.com/elixir-europe/DRS-cli.git@f043d945cbb41fa3589dd70d4ff65e47e9e05f06#egg=DRS_cli
 fido==4.2.2
 future==0.17.1
@@ -39,7 +39,6 @@ monotonic==1.5
 msgpack-python==0.5.6
 packaging==19.0
 pip-review==1.0
-pkg-resources==0.0.0
 pkginfo==1.5.0.1
 pycodestyle==2.5.0
 Pygments==2.4.2
