@@ -167,8 +167,6 @@ def rank_services(
     tes_info_drs = {}
     for uri, info in tes_info.items():
         tes_info_drs[uri] = sum_costs(
-            info["costs_data_transfer"], drs_object_info, uri
-            total_tes_costs=tes_info[uri]["costs_total"],
             data_transfer_rate=info["costs_data_transfer"],
             drs_objects_locations=drs_object_info,
             tes_url=uri
