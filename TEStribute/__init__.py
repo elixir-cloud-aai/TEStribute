@@ -15,9 +15,14 @@ from TEStribute.config.parse_config import config_parser, set_defaults
 from TEStribute.log.logging_functions import setup_logger
 from TEStribute.modes import Mode
 
+
 # Set up logging
 log_file = os.path.abspath(
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "log", "testribute.log")
+    os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        "log",
+        "testribute.log"
+    )
 )
 logger = setup_logger("TEStribute", log_file, logging.DEBUG)
 
@@ -163,6 +168,10 @@ def rank_services(
     for uri, info in tes_info.items():
         tes_info_drs[uri] = sum_costs(
             info["costs_data_transfer"], drs_object_info, uri
+            total_tes_costs=tes_info[uri]["costs_total"],
+            data_transfer_rate=info["costs_data_transfer"],
+            drs_objects_locations=drs_object_info,
+            tes_url=uri
         )
 
     # TODO : iterate though TES instances & each of their drs objects to total the costs & times and rank
@@ -223,10 +232,8 @@ def _sanitize_mode(
             return float(Mode[mode].value)
         except KeyError:
             logger.warning(
-                ("Run mode undefined. Unknown mode key passed: {mode}").format(
-                    mode=mode.lower()
-                )
-            )
+                    "Run mode undefined. Invalid mode value passed: {mode}"
+                ).format(mode=mode)
             return None
 
     # Check if `Mode` value
@@ -235,20 +242,16 @@ def _sanitize_mode(
             return float(mode)
         except ValueError:
             logger.warning(
-                ("Run mode undefined. Invalid mode value passed: {mode}").format(
-                    mode=mode
-                )
-            )
+                "Run mode undefined. Invalid mode value passed: {mode}"
+            ).format( mode=mode)
             return None
 
     # Check if allowed float
     if isinstance(mode, float):
         if mode < 0 or mode > 1:
             logger.warning(
-                (
                     "Run mode undefined. Out of bounds mode value passed: " "{mode}"
                 ).format(mode=mode)
-            )
             return None
         else:
             return mode
