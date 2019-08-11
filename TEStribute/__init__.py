@@ -15,14 +15,9 @@ from TEStribute.config.parse_config import config_parser, set_defaults
 from TEStribute.log.logging_functions import setup_logger
 from TEStribute.modes import Mode
 
-
 # Set up logging
 log_file = os.path.abspath(
-    os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        "log",
-        "testribute.log"
-    )
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "log", "testribute.log")
 )
 logger = setup_logger("TEStribute", log_file, logging.DEBUG)
 
@@ -40,7 +35,6 @@ def rank_services(
     services to use when submitting a TES task to decrease total costs and or
     time. Default values for all parameters are available in and derived from
     the config file `config/config.yaml`, if not provided.
-
     :param drs_ids: list of DRS identifiers of input files required for the
             task. Can be derived from `inputs` property of the `tesTask`
             model of the GA4GH Task Execution Service schema described here:
@@ -53,7 +47,7 @@ def rank_services(
             not used.
     :param tes_uris: list of root URIs to known TES instances.
     :param drs_uris: list of root URIs to known DRS instances.
-    :param mode: either a `mode.Mode` enumeration object, one of its members 
+    :param mode: either a `mode.Mode` enumeration object, one of its members
             'cost', 'time' or 'random', or one of its values 0, 1, -1,
             respetively. Depending on the mode, services are rank-ordered by
             increasing cost or time, or are randomized for testing/control
@@ -66,7 +60,6 @@ def rank_services(
             `drs_instances`, whether there are particular constraints or
             special provisions in place that apply to the user (e.g., custom
             princes). Currently not implemented.
-
     :return: an ordered list of dictionaries of TES and DRS instances; inner
             dictionaries are of the form:
                 {
@@ -167,22 +160,33 @@ def rank_services(
     tes_info_drs = {}
     for uri, info in tes_info.items():
         tes_info_drs[uri] = sum_costs(
+            total_tes_costs=tes_info[uri]["costs_total"],
             data_transfer_rate=info["costs_data_transfer"],
             drs_objects_locations=drs_object_info,
             tes_url=uri
         )
 
-    # TODO : iterate though TES instances & each of their drs objects to total the costs & times and rank
-    for i in tes_info.keys():
-        logger.debug("mode : "+str(mode))
-        logger.debug("for tes " + i)
-        logger.debug("=== RAKING OF TES TO BE BASED ON ==")
-        logger.debug("queue time")
-        logger.debug(tes_info[i]["queue_time"])
-        logger.debug("total drs costs after choosing cheapest drs for each object")
-        logger.debug(tes_info_drs[i]["drs_costs"])
-        logger.debug("total tes costs")
-        logger.debug(tes_info[i]["costs_total"])
+    cost_order = sorted(tes_info_drs.items(), key=lambda x: x[1]["total_costs"])
+    time_order = sorted(tes_info.items(), key=lambda x: x[1]["queue_time"]["duration"])
+
+    rank_dict = {uri: 0 for uri, val in cost_order}
+
+    for i in range(0, len(cost_order)):
+        rank_dict[cost_order[i][0]] = rank_dict[cost_order[i][0]] + i*mode
+        rank_dict[time_order[i][0]] = rank_dict[time_order[i][0]] + i*(1-mode)
+
+    rank_dict = sorted(rank_dict.items(), key=lambda item: item[1])
+
+    rank = 1
+    for i in rank_dict:
+        logger.debug(rank)
+        logger.debug(i[0])
+        for drs, info in tes_info_drs[i[0]].items():
+            print(drs, info)
+        rank += 1
+
+
+
 
     """
     required output format
@@ -195,7 +199,7 @@ def rank_services(
             "output_files": "DRS_URL",
     }
     """
-    return tes_info
+    return cost_order
 
 
 def _sanitize_mode(
