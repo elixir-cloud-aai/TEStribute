@@ -171,6 +171,7 @@ def rank_services(
 
     rank_dict = {uri: 0 for uri, val in cost_order}
 
+    # calculate the final rank on the basis of weight specified by mode
     for i in range(0, len(cost_order)):
         rank_dict[cost_order[i][0]] = rank_dict[cost_order[i][0]] + i*mode
         rank_dict[time_order[i][0]] = rank_dict[time_order[i][0]] + i*(1-mode)
@@ -178,7 +179,6 @@ def rank_services(
     rank_dict = sorted(rank_dict.items(), key=lambda item: item[1])
 
     # construct final dict
-
     return_dict_full = {}
     rank = 1
     for i in rank_dict:
