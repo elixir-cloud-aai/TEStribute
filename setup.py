@@ -1,7 +1,24 @@
+import os
 from setuptools import setup, find_packages
 
+# Read long description from file
 with open("README.md", "r") as fh:
     long_description = fh.read()
+
+# Read requirements from file
+install_requires = []
+# TODO:
+# Uncomment code block to read dependencies from `requirements.txt`
+# However, this does not work for packages on git
+# Alternatively, add only main requirements directly, *NOT* their
+# dependencies.
+# In any case it should be good to remove the GitHub installs and
+# upload packages to PyPI
+#root_dir = os.path.dirname(os.path.realpath(__file__))
+#req = root_dir + '/requirements.txt'
+#if os.path.isfile(req):
+#    with open(req) as f:
+#        install_requires = f.read().splitlines()
 
 setup(
     name="TEStribute",
@@ -13,6 +30,7 @@ setup(
     long_description_content_type="text/markdown",
     license="Apache License 2.0",
     url="https://github.com/elixir-europe/TEStribute",
+    install_requires=[],
     packages=find_packages(),
     keywords=(),
     classifiers=[
@@ -25,3 +43,4 @@ setup(
         "Programming Language :: Python :: 3.6",
     ],
 )
+

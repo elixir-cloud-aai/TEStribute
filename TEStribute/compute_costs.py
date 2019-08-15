@@ -5,7 +5,7 @@ from collections import defaultdict
 import logging
 from typing import Dict
 
-from distance import return_distance
+from TEStribute.distance import ip_distance
 
 logger = logging.getLogger("TEStribute")
 
@@ -20,7 +20,7 @@ def transfer_costs(tes_url: "string", rate: Dict, drs: Dict, size: "float"):
     """
     # considering more than one "access_methods" are provided
     for accessinfo in drs:
-        distance = return_distance(accessinfo["url"], tes_url)
+        distance = ip_distance(accessinfo["url"], tes_url)
         cost = round(size / 1000000000000, 7) * distance["distance"] * rate["amount"]
         accessinfo["cost"] = cost
         accessinfo["currency"] = rate["currency"]

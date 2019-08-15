@@ -7,13 +7,13 @@ import os
 from requests.exceptions import MissingSchema
 from typing import Dict, List, Union
 
-from drs_client_module import get_available_accessinfo
-from tes_client_module import fetch_tasks_info
-
+from TEStribute.access_drs import get_available_accessinfo
+from TEStribute.access_tes import fetch_tasks_info
 from TEStribute.compute_costs import sum_costs
 from TEStribute.config.parse_config import config_parser, set_defaults
 from TEStribute.log.logging_functions import setup_logger
 from TEStribute.modes import Mode
+from TEStribute.validate_inputs import sanitize_mode
 
 # Set up logging
 log_file = os.path.abspath(
@@ -76,7 +76,7 @@ def rank_services(
     config = config_parser()
 
     # Sanitize run mode
-    mode = _sanitize_mode(mode=mode)
+    mode = sanitize_mode(mode=mode)
 
     # Set defaults if values are missing
     def_values_set = set_defaults(
@@ -189,63 +189,6 @@ def rank_services(
         return_dict_full.update({rank : return_dict})
         rank += 1
     return return_dict_full
-
-
-def _sanitize_mode(
-    mode: Union[float, int, Mode, None, str] = None
-) -> Union[float, None]:
-    """
-    Validates, sanitizes and returns run mode.
-
-    :param mode: either
-            - a `mode.Mode` enumeration member or value
-            - one of strings 'cost', 'time' or 'random'
-            - one of integers -1, 0, 1
-            - a float between 0 and 1
-            - None
-
-    :return: sanitized mode which is either of type `mode.Mode`, a float
-            between 0 and 1 or `None`. The latter is also returned if an
-            invalid value is passed.
-    """
-    # Check if `None`
-    if mode is None:
-        logger.warning("Run mode undefined. No mode value passed.")
-        return None
-
-    # Check if `Mode` instance
-    if isinstance(mode, Mode):
-        return float(mode.value)
-
-    # Check if `Mode` key
-    if isinstance(mode, str):
-        try:
-            return float(Mode[mode].value)
-        except KeyError:
-            logger.warning(
-                    "Run mode undefined. Invalid mode value passed: {mode}"
-                ).format(mode=mode)
-            return None
-
-    # Check if `Mode` value
-    if isinstance(mode, int):
-        try:
-            return float(mode)
-        except ValueError:
-            logger.warning(
-                "Run mode undefined. Invalid mode value passed: {mode}"
-            ).format( mode=mode)
-            return None
-
-    # Check if allowed float
-    if isinstance(mode, float):
-        if mode < 0 or mode > 1:
-            logger.warning(
-                    "Run mode undefined. Out of bounds mode value passed: " "{mode}"
-                ).format(mode=mode)
-            return None
-        else:
-            return mode
 
 
 if __name__ == "__main__":
