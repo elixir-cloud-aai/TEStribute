@@ -4,13 +4,14 @@ Task distribution for GA4GH TES services.
 
 ## Synopsis
 
-Proof of concept implementation of a task distribution logic for a federated
-network of GA4GH TES services. Given lists of available GA4GH TES and DRS
-services and a tasks compute resource requirements, the software returns a list
-of TES and DRS services (per file) that are rank-ordered according to
-either increasing estimated costs or increasing estimates total processing
-times.
+Proof of concept implementation of a task distribution logic for a federated network of GA4GH TES services, the services
+use a modified OpenAPI spec using as mock services [mock-TES] and [mock-DRS].Given lists of available GA4GH TES and DRS 
+services and a tasks compute resource requirements, the software returns a list of TES and DRS services (per file) that
+are rank-ordered according to either increasing estimated costs or increasing estimates total processing times *or* a 
+weight can be provided to use both cost and time to order the service options .
 
+Independent clients to interact with the mock services can be found at [TES-cli] for the [mock-TES] and [DRS-cli] for 
+the [mock-DRS]. Further the modified specs along with the original specs can be found at [DRS specs] and [TES specs].
 ## Install
 
 Clone the repository
@@ -120,3 +121,10 @@ Unit tests can be run with the following command:
 ```bash
 pytest
 ```
+
+[mock-TES]:https://github.com/elixir-europe/mock-TES
+[mock-DRS]:https://github.com/elixir-europe/mock-DRS
+[TES-cli]:https://github.com/elixir-europe/TES-cli
+[DRS-cli]:https://github.com/elixir-europe/DRS-cli
+[TES specs]:https://github.com/elixir-europe/mock-TES/tree/master/mock_drs/specs
+[DRS specs]:https://github.com/elixir-europe/mock-DRS/tree/master/mock_drs/specs
