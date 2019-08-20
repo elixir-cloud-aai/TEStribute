@@ -16,7 +16,7 @@ cssselect==1.0.3
 decorator==4.4.0
 dicttoxml==1.7.4
 docutils==0.15.2
--e git+https://github.com/elixir-europe/DRS-cli.git@f043d945cbb41fa3589dd70d4ff65e47e9e05f06#egg=DRS_cli
+-e git+https://github.com/elixir-europe/DRS-cli.git#egg=DRS_cli
 fido==4.2.2
 future==0.17.1
 geocoder==1.38.1
@@ -66,10 +66,10 @@ simplejson==3.16.0
 six==1.12.0
 strict-rfc3339==0.7
 swagger-spec-validator==2.4.3
--e git+https://github.com/elixir-europe/TES-cli.git@ec1bbb4d9f95e01f8225214955b4759e238f61b7#egg=TES_cli
+-e git+https://github.com/elixir-europe/TES-cli.git#egg=TES_cli
 tqdm==4.32.2
 twine==1.13.0
-Twisted==19.2.1
+Twisted==19.7.0
 typed-ast==1.4.0
 typing==3.7.4
 typing-extensions==3.7.4

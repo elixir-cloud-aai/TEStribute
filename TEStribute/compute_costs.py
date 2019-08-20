@@ -62,11 +62,14 @@ def sum_costs(total_tes_costs: Dict, data_transfer_rate: Dict, drs_objects_locat
         return_info[drs_id] = sorted(
             return_info[drs_id].items(), key=lambda x: x[1]["cost"]
         )[0]
+
         sum_drs = return_info[drs_id][1]["cost"] + sum_drs
         currency = return_info[drs_id][1]["currency"]
 
     if currency == total_tes_costs["currency"]:
         total_cost = total_tes_costs["amount"] + sum_drs
 
+    # to fix overwriting of elemets in the loop it is called from
+    # return_info = dict(return_info)
     return_info.update({"drs_costs": {"amount": sum_drs, "currency": currency},"total_costs": total_cost})
     return return_info

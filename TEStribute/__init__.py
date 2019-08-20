@@ -59,7 +59,7 @@ def rank_services(
             services specified in `drs_ids`, `tes_instances` and
             `drs_instances`, whether there are particular constraints or
             special provisions in place that apply to the user (e.g., custom
-            princes). Currently not implemented.
+            prices). Currently not implemented.
     :return: an ordered list of dictionaries of TES and DRS instances; inner
             dictionaries are of the form:
                 {
@@ -159,15 +159,18 @@ def rank_services(
     # tes_info_drs will have all the drs costs & info for each TES
     tes_info_drs = {}
     for uri, info in tes_info.items():
-        tes_info_drs[uri] = sum_costs(
+        # TO-DO : here the older values of each drs object's cost are overwitten
+        #  fix the updation, though the normal dicts are NOT overwritten
+        tes_info_drs.update({uri: sum_costs(
             total_tes_costs=tes_info[uri]["costs_total"],
             data_transfer_rate=info["costs_data_transfer"],
             drs_objects_locations=drs_object_info,
-            tes_url=uri
-        )
+            tes_url=uri)
+        })
 
     cost_order = sorted(tes_info_drs.items(), key=lambda x: x[1]["total_costs"])
     time_order = sorted(tes_info.items(), key=lambda x: x[1]["queue_time"]["duration"])
+
 
     rank_dict = {uri: 0 for uri, val in cost_order}
 
@@ -186,11 +189,18 @@ def rank_services(
         return_dict["TES"] = i[0]
         for drs_id in drs_object_info.keys():
             return_dict[drs_id] = tes_info_drs[i[0]][drs_id][0]
-        return_dict_full.update({rank : return_dict})
+            return_dict["drs_costs"] = tes_info_drs[i[0]]["drs_costs"]
+            return_dict["total_costs"] = tes_info_drs[i[0]]["total_costs"]
+            return_dict["tes_time"] = tes_info[i[0]]["queue_time"]
+        return_dict_full.update({rank: return_dict})
         rank += 1
     return return_dict_full
 
 
 if __name__ == "__main__":
     response = rank_services()
-    logger.debug(response)
+    logger.debug("Final Order : ")
+    for i in response:
+        logger.info("RANK - "+str(i))
+        for j in response[i]:
+            logger.info("\t" + str(j) + " :"+ str(response[i][j]))
