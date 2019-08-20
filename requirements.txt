@@ -69,7 +69,7 @@ swagger-spec-validator==2.4.3
 -e git+https://github.com/elixir-europe/TES-cli.git#egg=TES_cli
 tqdm==4.32.2
 twine==1.13.0
-Twisted==19.2.1
+Twisted==19.7.0
 typed-ast==1.4.0
 typing==3.7.4
 typing-extensions==3.7.4
