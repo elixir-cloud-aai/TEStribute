@@ -59,7 +59,7 @@ def rank_services(
             services specified in `drs_ids`, `tes_instances` and
             `drs_instances`, whether there are particular constraints or
             special provisions in place that apply to the user (e.g., custom
-            princes). Currently not implemented.
+            prices). Currently not implemented.
     :return: an ordered list of dictionaries of TES and DRS instances; inner
             dictionaries are of the form:
                 {
