@@ -1,19 +1,18 @@
 """
 Exposes TEStribute main function rank_services()
 """
-from collections import defaultdict
 import logging
 import os
-from requests.exceptions import MissingSchema
 from typing import Dict, List, Union
 
-from TEStribute.access_drs import get_available_accessinfo
-from TEStribute.access_tes import fetch_tasks_info
+from TEStribute.access_drs import fetch_drs_objects_metadata
+from TEStribute.access_tes import fetch_tes_task_info
 from TEStribute.compute_costs import sum_costs
-from TEStribute.config.parse_config import config_parser, set_defaults
-from TEStribute.log.logging_functions import setup_logger
+from TEStribute.config.parse_config import config_parser
+from TEStribute.log.logging_functions import log_yaml
+from TEStribute.log import setup_logger
 from TEStribute.modes import Mode
-from TEStribute.validate_inputs import sanitize_mode
+from TEStribute.validate_inputs import validate_input_parameters
 
 # Set up logging
 log_file = os.path.abspath(
@@ -23,43 +22,45 @@ logger = setup_logger("TEStribute", log_file, logging.DEBUG)
 
 
 def rank_services(
+    auth_header: Union[None, str] = None,
     drs_ids: Union[List, None] = None,
-    resource_requirements: Union[Dict, None] = None,
-    tes_uris: Union[List, None] = None,
     drs_uris: Union[List, None] = None,
     mode: Union[float, int, Mode, None, str] = None,
-    auth_header: Union[None, str] = None,
+    resource_requirements: Union[Dict, None] = None,
+    tes_uris: Union[List, None] = None,
 ) -> List:
     """
     Main function that returns a rank-ordered list of GA4GH TES and DRS
     services to use when submitting a TES task to decrease total costs and or
     time. Default values for all parameters are available in and derived from
     the config file `config/config.yaml`, if not provided.
-    :param drs_ids: list of DRS identifiers of input files required for the
+
+    :param auth_header: Auth/bearer token to be passed to any TES/DRS calls in
+            order to ascertain whether the user has permissions to access
+            services specified in `drs_ids`, `tes_instances` and
+            `drs_instances`, whether there are particular constraints or
+            special provisions in place that apply to the user (e.g., custom
+            prices). Currently not implemented.
+    :param drs_ids: List of DRS identifiers of input files required for the
             task. Can be derived from `inputs` property of the `tesTask`
             model of the GA4GH Task Execution Service schema described here:
             https://github.com/ga4gh/task-execution-schemas/blob/develop/openapi/task_execution.swagger.yaml
-    :param resource_requirements: dictionary of resources required for the
+    :param drs_uris: List of root URIs to known DRS instances.
+    :param resource_requirements: Dictionary of resources required for the
             task; of the form described in the `tesResources` model of the
             _modified_ GA4GH Task Execution Service schema as described here:
             https://github.com/elixir-europe/mock-TES/blob/master/mock_tes/specs/schema.task_execution_service.d55bf88.openapi.modified.yaml
             Note that the `preemptible` and `zones` properties are currently
             not used.
-    :param tes_uris: list of root URIs to known TES instances.
-    :param drs_uris: list of root URIs to known DRS instances.
-    :param mode: either a `mode.Mode` enumeration object, one of its members
+    :param mode: Either a `mode.Mode` enumeration object, one of its members
             'cost', 'time' or 'random', or one of its values 0, 1, -1,
             respetively. Depending on the mode, services are rank-ordered by
             increasing cost or time, or are randomized for testing/control
             purposes; it is also possible to pass a float between 0 and 1;
             in that case, the value determines the weight between cost (0)
             and time (1) optimization.
-    :param auth_header: auth/bearer token to be passed to any TES/DRS calls in
-            order to ascertain whether the user has permissions to access
-            services specified in `drs_ids`, `tes_instances` and
-            `drs_instances`, whether there are particular constraints or
-            special provisions in place that apply to the user (e.g., custom
-            prices). Currently not implemented.
+    :param tes_uris: List of root URIs to known TES instances.
+
     :return: an ordered list of dictionaries of TES and DRS instances; inner
             dictionaries are of the form:
                 {
@@ -72,14 +73,44 @@ def rank_services(
                 }
             where [drs_id] entries are taken from parameter `drs_ids`.
     """
+    # Log user input
+    log_yaml(
+        header="=== USER INPUT ===",
+        level=logging.DEBUG,
+        logger=logger,
+        drs_ids=drs_ids,
+        drs_uris=drs_uris,
+        mode=mode,
+        resource_requirements=resource_requirements,
+        tes_uris=tes_uris,
+    )
+
     # Parse config file
+    log_yaml(
+        header="=== CONFIG ===",
+        level=logging.DEBUG,
+        logger=logger,
+    )
     config = config_parser()
+    log_yaml(
+        level=logging.DEBUG,
+        logger=logger,
+        config=config,
+    )
 
-    # Sanitize run mode
-    mode = sanitize_mode(mode=mode)
-
-    # Set defaults if values are missing
-    def_values_set = set_defaults(
+    # Set default values for missing input parameters, validate & sanitize
+    log_yaml(
+        header="=== VALIDATION ===",
+        level=logging.DEBUG,
+        logger=logger,
+    )
+    (
+        drs_ids,
+        drs_uris,
+        mode,
+        resource_requirements,
+        tes_uris,
+    ) = validate_input_parameters(
         defaults=config,
         drs_ids=drs_ids,
         drs_uris=drs_uris,
@@ -87,90 +118,67 @@ def rank_services(
         resource_requirements=resource_requirements,
         tes_uris=tes_uris,
     )
-    # pylint: disable=unbalanced-tuple-unpacking
-    drs_ids, drs_uris, mode, resource_requirements, tes_uris = def_values_set
 
-    # Ascertain availability of required parameters
-    if mode is None:
-        logger.error("No valid run mode provided.")
-    try:
-        cpu_cores = resource_requirements["cpu_cores"]
-        ram_gb = resource_requirements["ram_gb"]
-        disk_gb = resource_requirements["disk_gb"]
-        execution_time_min = resource_requirements["execution_time_min"]
-    except KeyError as e:
-        logger.error(
-            (
-                "Required resource parameter missing. Original error "
-                "message: {type}: {msg}"
-            ).format(type=type(e).__name__, msg=e)
-        )
-    if not len(tes_uris):
-        logger.error("No TES instances available.")
-    if len(drs_ids) and not len(drs_uris):
-        logger.error("Input files required but no DRS instances available.")
-
-    # Log input parameters
-    logger.info("=== INPUT PARAMETERS ===")
-
-    # Log run mode
-    logger.info("Run mode:")
-    logger.info("- {mode}".format(mode=mode))
-
-    # Log task resources
-    logger.info("Requested resources:")
-    for name, value in resource_requirements.items():
-        logger.info("- {name}: {value}".format(name=name, value=str(value)))
-
-    # Log input file identifiers:
-    logger.info("Input file IDs:")
-    for drs_id in drs_ids:
-        logger.info("- {drs_id}".format(drs_id=drs_id))
-
-    # Log known TES instances
-    logger.info("TES instances:")
-    for tes in tes_uris:
-        logger.info("- {tes}".format(tes=tes))
-
-    # Log known DRS instances
-    logger.info("DRS instances:")
-    for drs in drs_uris:
-        logger.info("- {drs}".format(drs=drs))
-
-    drs_object_info = defaultdict(dict)
-    for drs_uri in drs_uris:
-        drs_info = get_available_accessinfo(drs_uri, drs_ids)
-        for drs_id in drs_info:
-            drs_object_info[drs_id].update({drs_uri: drs_info[drs_id]})
-
-    # add a warning for any missing objects
-    logger.warning("DRS objects not found at any services: "+str(list(set(drs_ids) - set(drs_object_info.keys()))))
-
-    tes_info = {}
-    # Get task queue time and cost estimates from TES instances
-    for url in tes_uris:
+    # Log validated input parameters 
+    log_yaml(
+        header="=== VALIDATED INPUT PARAMETERS ===",
+        level=logging.INFO,
+        logger=logger,
+        drs_ids=drs_ids,
+        drs_uris=drs_uris,
+        mode=mode,
+        resource_requirements=resource_requirements,
+        tes_uris=tes_uris,
+    )
+    
+    # Get metadata for input objects
+    if drs_ids is not None:
         try:
-            tes_info[url] = fetch_tasks_info(
-                url, cpu_cores, ram_gb, disk_gb, execution_time_min
+            drs_object_info = fetch_drs_objects_metadata(
+                drs_uris=drs_uris,
+                drs_ids=drs_ids,
+                timeout=config["timeout"]
             )
-        except MissingSchema:
-            logging.error("Service not active " + name + "at" + url)
+        except Exception:
+            logger.critical(
+                (
+                    "Task cannot be computed: required input file(s) cannot be "
+                    "accessed."
+                )
+            )
+            raise
 
+    # Get TES task info for resource requirements
+    try:
+        tes_task_info = fetch_tes_task_info(
+            tes_uris=tes_uris,
+            resource_requirements=resource_requirements,
+            timeout=config["timeout"]
+        )
+    except Exception:
+        logger.critical(
+            (
+                "Task cannot be computed: task info could not be obtained."
+            )
+        )
+        raise 
+
+    # CHECK
+    #>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # tes_info_drs will have all the drs costs & info for each TES
     tes_info_drs = {}
-    for uri, info in tes_info.items():
-        # TO-DO : here the older values of each drs object's cost are overwitten
+    for uri, info in tes_task_info.items():
+        # TODO : here the older values of each drs object's cost are overwitten
         #  fix the updation, though the normal dicts are NOT overwritten
         tes_info_drs.update({uri: sum_costs(
-            total_tes_costs=tes_info[uri]["costs_total"],
+            total_tes_costs=tes_task_info[uri]["costs_total"],
             data_transfer_rate=info["costs_data_transfer"],
             drs_objects_locations=drs_object_info,
             tes_url=uri)
         })
 
     cost_order = sorted(tes_info_drs.items(), key=lambda x: x[1]["total_costs"])
-    time_order = sorted(tes_info.items(), key=lambda x: x[1]["queue_time"]["duration"])
-
+    time_order = sorted(tes_task_info.items(), key=lambda x: x[1]["queue_time"]["duration"])
 
     rank_dict = {uri: 0 for uri, val in cost_order}
 
@@ -191,16 +199,18 @@ def rank_services(
             return_dict[drs_id] = tes_info_drs[i[0]][drs_id][0]
             return_dict["drs_costs"] = tes_info_drs[i[0]]["drs_costs"]
             return_dict["total_costs"] = tes_info_drs[i[0]]["total_costs"]
-            return_dict["tes_time"] = tes_info[i[0]]["queue_time"]
+            return_dict["tes_time"] = tes_task_info[i[0]]["queue_time"]
         return_dict_full.update({rank: return_dict})
         rank += 1
     return return_dict_full
+    #<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
 if __name__ == "__main__":
-    response = rank_services()
-    logger.debug("Final Order : ")
-    for i in response:
-        logger.info("RANK - "+str(i))
-        for j in response[i]:
-            logger.info("\t" + str(j) + " :"+ str(response[i][j]))
+    ranking = rank_services()
+    log_yaml(
+        header="=== OUTPUT ===",
+        level=logging.INFO,
+        logger=logger,
+        ranking=ranking,
+    )

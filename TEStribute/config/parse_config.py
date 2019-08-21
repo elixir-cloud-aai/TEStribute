@@ -3,7 +3,7 @@ YAML config parser
 """
 import os
 import logging
-from typing import Any, Dict
+from typing import Dict
 import yaml
 
 logger = logging.getLogger("TEStribute")
@@ -34,44 +34,3 @@ def config_parser(
             ).format(default_path=default_path, type=type(error).__name__, msg=error)
         )
     return config
-
-
-def set_defaults(
-    defaults: Dict,
-    **kwargs: Any,
-) -> Any:
-    """
-    Returns `**kwargs` with any undefined values being substitute with values
-    from a dictionary of default values.
-
-    :param defaults: Dictionary of default values for the keys in `**kwargs`
-    :param **kwargs: Arbitrary set of objects to be replaced with default
-            values if undefined. Keys are used to look up default values in the
-            `defaults` dictionary. Objects whose keys are not available in the
-            `defaults` dictionary will be skipped with a warning.
-    :return: list of objects in `**kwargs`, sorted by keys  in alphabetical
-            order
-    """
-    return_values = []
-    for name, value in sorted(kwargs.items()):
-        if value is not None:
-            logger.debug(
-                (
-                    "Object '{name}' is not undefined. No default value set."
-                ).format(name=name)
-            )
-        elif not name in defaults:
-            logger.warning(
-                (
-                    "No default value available for object '{name}'."
-                ).format(name=name)
-            )
-        else:
-            logger.debug(
-                (
-                    "No value for object '{name}' is defined. Default value set."
-                ).format(name=name)
-            )
-            value = defaults[name]
-        return_values.append(value) 
-    return return_values
