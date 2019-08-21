@@ -1,36 +1,45 @@
 """
-Logging configuration
+Convenience functions for logging.
 """
 import logging
-import sys
+from logging import Logger
+from typing import Any, Dict, List, Union, Set, Tuple
 
-def setup_logger(
-    name: str,
-    log_file: str,
-    level: int = logging.INFO
-) -> logging.Logger:
-    """Set up logger"""
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
+import yaml
 
-    if not logger.handlers:
+logger = logging.getLogger("TEStribute")
 
-        # Add stream handler for STDERR
-        stream = logging.StreamHandler(sys.stderr)
-        stream.setFormatter(
-            logging.Formatter(
-                "[%(asctime)s: %(levelname)s] %(message)s"
-            )
-        )
-        logger.addHandler(stream)
 
-        # Add file handler
-        fl = logging.FileHandler(log_file)
-        fl.setFormatter(
-            logging.Formatter(
-                 "[%(asctime)s: %(levelname)s] [%(filename)s:%(lineno)s - %(funcName)5s()] %(message)s"
-            )
-        )
-        logger.addHandler(fl)
+def log_yaml(
+    header: Union[None, str] = None,
+    level: int = logging.DEBUG,
+    logger: Logger = logging,
+    **kwargs: Any,
+) -> None:
+    """
+        Logs each of a number of keyword arguments with the indicated logging
+        level in YAML format. Dictionaries and iterable objects are logged
+        recursively.
 
-    return logger
+        :param header: If not `None`, the header is logged before any of the
+                keyword arguments are processed.
+        :param level: Logging level.
+        :param logger: The logger to be used.
+        :param separator: If not `None`, the separator is logged after every
+                keyword argument.
+
+        :return: None.
+    """
+    # Log header
+    if header is not None:
+        logger.log(level, header)
+
+    # Log value
+    if kwargs:
+        text = yaml.dump(
+            kwargs,
+            allow_unicode=True,
+            default_flow_style=False
+        ).splitlines()
+        for line in text:
+            logger.log(level, line)
