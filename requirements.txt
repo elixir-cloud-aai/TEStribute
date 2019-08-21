@@ -16,7 +16,7 @@ cssselect==1.0.3
 decorator==4.4.0
 dicttoxml==1.7.4
 docutils==0.15.2
--e git+https://github.com/elixir-europe/DRS-cli.git#egg=DRS_cli
+-e git+https://github.com/elixir-europe/DRS-cli.git@e22cb57db6dab83aa0a8b1a8cd2d174f85183815#egg=DRS_cli
 fido==4.2.2
 future==0.17.1
 geocoder==1.38.1
