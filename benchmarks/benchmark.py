@@ -7,25 +7,19 @@ from typing import Dict
 from drs_client import Client as drs_cli
 from tes_client import Client as tes_cli
 
-from TEStribute.log.logging_functions import setup_logger
-
-
-# Set up logging
-#log_file = os.path.abspath(
-#    os.path.join(os.path.dirname(os.path.realpath(__file__)), "log", "testribute.log")
-#)
-#logger = setup_logger("TEStribute", log_file, logging.DEBUG)
+# TO-DO:
+#   configure a separate logger for benchmarking 
 
 
 def setup_drs(uri: 'string',objects: Dict):
-    drs_client = drs_cli.Client(uri)
-    drs_client.updateDatabaseObjects(False, objects)
+    drs_client = drs_cli(uri)
+    drs_client.updateDatabaseObjects(objects,False)
 
     return "updated"
 
 
 def setup_tes(uri: 'string',costs: Dict):
-    tes_client = tes_cli.Client(uri)
+    tes_client = tes_cli(uri)
     tes_client.updateTaskInfoConfig(costs["currency"],costs["time_unit"],costs["unit_costs"])
 
     return "updated"
