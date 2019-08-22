@@ -5,13 +5,17 @@ import logging
 import os
 from typing import Dict, List, Union
 
+from TEStribute import rank_order
 from TEStribute.access_drs import fetch_drs_objects_metadata
 from TEStribute.access_tes import fetch_tes_task_info
-from TEStribute.compute_costs import sum_costs
+from TEStribute.costs import estimate_costs
 from TEStribute.config.parse_config import config_parser
+from TEStribute.distances import estimate_distances
 from TEStribute.log.logging_functions import log_yaml
 from TEStribute.log import setup_logger
-from TEStribute.modes import Mode
+from TEStribute.models import Mode
+from TEStribute.times import estimate_times
+from TEStribute.utils import get_valid_service_combinations
 from TEStribute.validate_inputs import validate_input_parameters
 
 # Set up logging
@@ -161,44 +165,99 @@ def rank_services(
                 "Task cannot be computed: task info could not be obtained."
             )
         )
-        raise 
+        raise
+    
+    # Get valid TES-DRS combinations
+    valid_service_combos = get_valid_service_combinations(
+        task_info=tes_task_info,
+        object_info=drs_object_info,
+    )
 
-    # CHECK
+    # Rank services by costs and/or time
+    if Mode["cost"].value <= mode <= Mode["time"].value:
+    
+        # Compute distances
+        tes_object_distances = estimate_distances(
+            combinations=valid_service_combos,
+        )
+
+        # Compute cost estimates
+        if Mode["cost"].value <= mode < Mode["time"].value:
+            tes_costs = estimate_costs(
+                task_info=tes_task_info,
+                object_info=drs_object_info,
+                distances=tes_object_distances,
+            )
+        else: tes_costs = {}
+
+        # Compute time estimates
+        if Mode["cost"].value < mode <= Mode["time"].value:
+            tes_times = estimate_times(
+                task_info=tes_task_info,
+                object_info=drs_object_info,
+                distances=tes_object_distances,
+            )
+        else: tes_times = {}
+
+        # Rank by costs/times
+        ranked_services = rank_order.cost_time(
+            costs=tes_costs,
+            times=tes_times,
+            weight=mode,
+        )
+
+    # Randomize ranks
+    elif mode == Mode["random"].value:
+        ranked_services = rank_order.randomize(
+            uris=tes_uris,
+            object_info=drs_object_info,
+        )
+    
+    # Catch other run modes
+    else:
+        logger.critical(
+            (
+                "Task cannot be computed: no ranking function defined for "
+                "mode: {mode}."
+            ).format(mode=mode)
+        )
+        raise ValueError
+
+    # Log output
+    log_yaml(
+        header="=== RANKED SERVICES ===",
+        level=logging.INFO,
+        logger=logger,
+        ranked_services=ranked_services,
+    )
+    
+
+    # MOVE TO OTHER MODULES & RE-FACTOR
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # tes_info_drs will have all the drs costs & info for each TES
-    tes_info_drs = {}
-    for uri, info in tes_task_info.items():
-        # TODO : here the older values of each drs object's cost are overwitten
-        #  fix the updation, though the normal dicts are NOT overwritten
-        tes_info_drs.update({uri: sum_costs(
-            total_tes_costs=tes_task_info[uri]["costs_total"],
-            data_transfer_rate=info["costs_data_transfer"],
-            drs_objects_locations=drs_object_info,
-            tes_url=uri)
-        })
 
-    cost_order = sorted(tes_info_drs.items(), key=lambda x: x[1]["total_costs"])
+    cost_order = sorted(tes_costs.items(), key=lambda x: x[1]["total_costs"])
     time_order = sorted(tes_task_info.items(), key=lambda x: x[1]["queue_time"]["duration"])
 
-    rank_dict = {uri: 0 for uri, val in cost_order}
+    ranked_services = {uri: 0 for uri, val in cost_order}
 
     # calculate the final rank on the basis of weight specified by mode
     for i in range(0, len(cost_order)):
-        rank_dict[cost_order[i][0]] = rank_dict[cost_order[i][0]] + i*mode
-        rank_dict[time_order[i][0]] = rank_dict[time_order[i][0]] + i*(1-mode)
+        ranked_services[cost_order[i][0]] = ranked_services[cost_order[i][0]] + i*mode
+        ranked_services[time_order[i][0]] = ranked_services[time_order[i][0]] + i*(1-mode)
 
-    rank_dict = sorted(rank_dict.items(), key=lambda item: item[1])
+    ranked_services = sorted(ranked_services.items(), key=lambda item: item[1])
 
     # construct final dict
     return_dict_full = {}
     rank = 1
-    for i in rank_dict:
+    for i in ranked_services:
         return_dict = {}
         return_dict["TES"] = i[0]
         for drs_id in drs_object_info.keys():
-            return_dict[drs_id] = tes_info_drs[i[0]][drs_id][0]
-            return_dict["drs_costs"] = tes_info_drs[i[0]]["drs_costs"]
-            return_dict["total_costs"] = tes_info_drs[i[0]]["total_costs"]
+            return_dict[drs_id] = tes_costs[i[0]][drs_id][0]
+            return_dict["drs_costs"] = tes_costs[i[0]]["drs_costs"]
+            return_dict["total_costs"] = tes_costs[i[0]]["total_costs"]
             return_dict["tes_time"] = tes_task_info[i[0]]["queue_time"]
         return_dict_full.update({rank: return_dict})
         rank += 1
@@ -206,6 +265,7 @@ def rank_services(
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
+# Executed when script is called from command line
 if __name__ == "__main__":
     ranking = rank_services()
     log_yaml(

@@ -3,7 +3,7 @@ Functions dealing with the calculation of the distance between IP addresses
 """
 import logging
 import socket
-from typing import Dict
+from typing import Dict, List
 
 from geopy.distance import geodesic
 from ip2geotools.databases.noncommercial import DbIpCity
@@ -11,6 +11,14 @@ from ip2geotools.errors import InvalidRequestError
 from urllib.parse import urlparse
 
 logger = logging.getLogger("TEStribute")
+
+
+def estimate_distances(
+    combinations: Dict,
+) -> Dict:
+    """
+    """
+    return {}
 
 
 def ip_distance(url1: str, url2: str) -> Dict:

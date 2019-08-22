@@ -4,7 +4,7 @@ Unit tests for IP distance calculation function
 """
 import pytest
 
-from TEStribute.modes import Mode
+from TEStribute.models import Mode
 from TEStribute.validate_inputs import sanitize_mode
 
 # Test parameters

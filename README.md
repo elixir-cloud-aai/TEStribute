@@ -243,7 +243,7 @@ of the [Global Alliance for Genomics and Health][1] [organization].
 [mock-TES]: <https://github.com/elixir-europe/mock-TES>
 [modified TES specifications]: <https://github.com/elixir-europe/mock-TES/blob/master/mock_tes/specs/schema.task_execution_service.d55bf88.openapi.modified.yaml>
 [mock-DRS]: <https://github.com/elixir-europe/mock-DRS>
-[`mode.Mode`]: TEStribute/modes.py
+[`mode.Mode`]: TEStribute/models.py
 [organization]: <https://summerofcode.withgoogle.com/organizations/6643588285333504/>
 [OpenAPI]: <https://swagger.io/specification/>
 [pip]: <https://pip.pypa.io/en/stable/installing/>

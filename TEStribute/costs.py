@@ -1,16 +1,38 @@
 """
-Functions to compute costs associated with tasks
+Functions to compute costs associated with tasks.
 """
 from collections import defaultdict
 import logging
 from typing import Dict
 
-from TEStribute.distance import ip_distance
+from TEStribute.distances import ip_distance
 
 logger = logging.getLogger("TEStribute")
 
 
-def transfer_costs(tes_url: "string", rate: Dict, drs: Dict, size: "float"):
+def estimate_costs(
+    task_info: Dict,
+    object_info: Dict,
+    distances: Dict,
+) -> Dict:
+    """
+    """
+    #############################
+    tes_info_drs = {}
+    for uri, info in task_info.items():
+        # TODO : here the older values of each drs object's cost are overwitten
+        #  fix the updation, though the normal dicts are NOT overwritten
+        tes_info_drs.update({uri: sum_costs(
+            total_tes_costs=task_info[uri]["costs_total"],
+            data_transfer_rate=info["costs_data_transfer"],
+            drs_objects_locations=object_info,
+            tes_url=uri)
+        })
+    return tes_info_drs
+    #############################
+
+
+def transfer_costs(tes_url: str, rate: Dict, drs: Dict, size: float):
     """
     :param tes_url: string of the tes uri endpoint
     :param rate: Dict rate in format {"rate":,"currency:} rate in units per 1000 km

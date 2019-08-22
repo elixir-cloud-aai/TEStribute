@@ -3,7 +3,7 @@ from collections.abc import Iterable
 import logging
 from typing import Any, Dict, List, Set, Tuple, Union
 
-from TEStribute.modes import Mode
+from TEStribute.models import Mode
 
 logger = logging.getLogger("TEStribute")
 
@@ -242,15 +242,14 @@ def sanitize_mode(
     """
     Validates, sanitizes and returns run mode.
 
-    :param mode: either
-            - a `modes.Mode` enumeration member or value
+    :param mode: Either
+            - a `models.Mode` enumeration member or value
             - one of strings 'cost', 'time' or 'random'
             - one of integers -1, 0, 1
             - a float between 0 and 1
 
-    :return: sanitized mode which is either a value of enum `modes.Mode`, or a
-            float between 0 and 1. `None` is returned if an invalid value is
-            passed.
+    :return: Sanitized mode of type `float`. None` is returned if an invalid
+            value is passed.
     """
     # Check if `Mode` instance
     if isinstance(mode, Mode):
