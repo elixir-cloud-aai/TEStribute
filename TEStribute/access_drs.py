@@ -6,7 +6,7 @@ import logging
 from typing import Dict, List, Set, Tuple, Union
 
 from bravado.exception import HTTPNotFound
-from drs_client import Client
+import drs_client
 from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
 
@@ -111,7 +111,7 @@ def _fetch_drs_objects_metadata(
 
     # Establish connection with DRS; handle exceptions
     try:
-        client = Client.Client(uri)
+        client = drs_client.Client(uri)
     except TimeoutError:
         logger.warning(
             (

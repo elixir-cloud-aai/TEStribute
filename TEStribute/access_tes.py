@@ -7,7 +7,7 @@ from typing import Dict, List, Set, Tuple, Union
 from bravado.exception import HTTPNotFound
 from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
-from tes_client import Client
+import tes_client
 
 logger = logging.getLogger("TEStribute")
 
@@ -92,7 +92,7 @@ def _fetch_tes_task_info(
     # Establish connection with TES; handle exceptions
     # TODO: Implement timeout
     try:
-        client = Client.Client(uri)
+        client = tes_client.Client(uri)
     except TimeoutError:
         logger.warning(
             (
