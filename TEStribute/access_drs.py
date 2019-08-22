@@ -139,7 +139,7 @@ def _fetch_drs_objects_metadata(
         # TODO: Cross-check object checksums, die if differ
         # TODO: Cross-check object sizes, die if differ
         try:
-            objects_metadata[drs_id] = client.GetObject(
+            objects_metadata[drs_id] = client.getObject(
                 drs_id
             )._as_dict()
         except HTTPNotFound:
