@@ -58,6 +58,20 @@ mockup services which implement these modifications/assumptions. The
 corresponding clients [TES-cli] and [DRS-cli] are used within `TEStribute`
 to interact with these services.
 
+### Calculations 
+
+The TESTribute calculates costs and time on the based on a simple summation model.For 
+costs we need to add costs for storage, computation and data transfer. 
+
+![costs](formulas/cost.png)
+
+and for time wish to consider time taken in data transfer and for the execution of the task
+
+![time](formulas/time.png)
+
+further, the t_exec includes the queue time and the time of computation. 
+
+
 ## Install
 
 ### Requirements
