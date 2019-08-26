@@ -59,7 +59,7 @@ corresponding clients [TES-cli] and [DRS-cli] are used within `TEStribute`
 to interact with these services.
 
 The diagram shown below shows how the TEStribute works at the moment. 
-![Working](infographics/TEStribute_working.png)
+![TEStribute_working]
 
 ## Install
 
@@ -255,3 +255,4 @@ of the [Global Alliance for Genomics and Health][1] [organization].
 [Task Execution Service]: <https://github.com/ga4gh/task-execution-schemas>
 [TES-cli]: <https://github.com/elixir-europe/TES-cli>
 [virtualenv]: <https://virtualenv.pypa.io/en/stable/installation/>
+[TEStribute_working]:infographics/TESTribute_working.png
