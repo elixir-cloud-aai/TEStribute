@@ -58,6 +58,9 @@ mockup services which implement these modifications/assumptions. The
 corresponding clients [TES-cli] and [DRS-cli] are used within `TEStribute`
 to interact with these services.
 
+The diagram shown below shows how the TEStribute works at the moment. 
+![Working](infographics/TEStribute_working.png)
+
 ## Install
 
 ### Requirements
