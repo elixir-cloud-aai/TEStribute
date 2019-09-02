@@ -16,7 +16,7 @@ cssselect==1.0.3
 decorator==4.4.0
 dicttoxml==1.7.4
 docutils==0.15.2
--e git+https://github.com/elixir-europe/DRS-cli.git#egg=drs_client
+drs_client==0.1.0
 fido==4.2.2
 future==0.17.1
 geocoder==1.38.1
@@ -66,7 +66,7 @@ simplejson==3.16.0
 six==1.12.0
 strict-rfc3339==0.7
 swagger-spec-validator==2.4.3
--e git+https://github.com/elixir-europe/TES-cli.git#egg=tes_client
+tes_client==0.1.0
 tqdm==4.32.2
 twine==1.13.0
 Twisted==19.7.0
