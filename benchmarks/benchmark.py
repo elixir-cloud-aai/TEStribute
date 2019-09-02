@@ -12,6 +12,7 @@ from bravado.exception import HTTPInternalServerError
 from drs_client import Client as drs_cli
 from tes_client import Client as tes_cli
 
+from TEStribute import rank_services
 # TO-DO:
 #   configure a separate logger for benchmarking 
 
@@ -69,7 +70,7 @@ def setup_env(config_id: str):
     except KeyError:
         print("No TES uris provided")
 
-    return{
+    return {
         "drs_ids": setup_dict["drs_ids"],
         "resource_requirements": setup_dict["resource_requirements"],
         "tes_uris": list(tes_uris.keys()),
@@ -77,8 +78,3 @@ def setup_env(config_id: str):
         "mode": setup_dict["mode"],
         "auth_header": setup_dict["auth_header"],
     }
-
-
-if __name__ == "__main__":
-    setup_env("config1.yaml")
-
