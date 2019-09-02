@@ -12,10 +12,15 @@ from bravado.exception import HTTPInternalServerError
 from drs_client import Client as drs_cli
 from tes_client import Client as tes_cli
 
+from TEStribute.log.logging_functions import log_yaml
+from TEStribute.log import setup_logger
 from TEStribute import rank_services
-# TO-DO:
-#   configure a separate logger for benchmarking 
 
+
+log_file = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.realpath(__file__)), "log", "benchmarks.log")
+)
+logger = setup_logger("TEStribute_benchmarks", log_file, logging.DEBUG)
 
 def setup_drs(uri: 'string',objects: Dict):
     """
@@ -52,9 +57,9 @@ def setup_env(config_id: str):
             try:
                 setup_drs(uri, drs_uris[uri])
             except KeyError :
-                print("No changes made to default config" + uri)
+                logger.info("No changes made to default config" + uri)
             except HTTPInternalServerError:
-                print("Update endpoint not accessed :"+ uri)
+                logger.info("Update endpoint not accessed :"+ uri)
     except KeyError:
         print("No DRS uris provided")
 
@@ -64,11 +69,11 @@ def setup_env(config_id: str):
             try:
                 setup_tes(uri, tes_uris[uri])
             except KeyError:
-                print("No changes made to default config for " + uri)
+                logger.info("No changes made to default config for " + uri)
             except HTTPInternalServerError:
-                print ("Update endpoint not accessed :" + uri)
+                logger.info("Update endpoint not accessed :" + uri)
     except KeyError:
-        print("No TES uris provided")
+        logger.info("No TES uris provided")
 
     return {
         "drs_ids": setup_dict["drs_ids"],
