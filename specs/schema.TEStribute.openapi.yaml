@@ -1,0 +1,96 @@
+openapi: "3.0.0"
+info:
+  version: 0.0.1
+  title: TEStribute OpenAPI specification
+  contact:
+    name: 'Elixir Europe'
+    email: 'alexander.kanitz@alumni.ethz.ch'
+  license:
+    name: Apache 2.0
+    url: 'https://github.com/elixir-europe/TEStribute/blob/dev/LICENSE'
+paths:
+  /rank_services:
+    post:
+      operationId: rank_services
+      description: Creates a new pet in the store.  Duplicates are allowed
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/rank_services_requirements'
+      responses:
+        '200':
+          description: ranking successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/rank_services_response'
+
+components:
+  schemas:
+    rank_services_requirements:
+      type: object
+      properties:
+        drs_ids:
+          $ref: '#/components/schemas/drs_ids'
+        drs_uris:
+          $ref: '#/components/schemas/drs_uris'
+        mode:
+          anyOf:
+            - type: integer
+            - type: string
+            - type: number
+        resource_requirements:
+          $ref: '#/components/schemas/resource_requirements'
+        tes_uris:
+          $ref: '#/components/schemas/tes_uris'
+    drs_ids:
+      type: array
+      items:
+        type: string
+    drs_uris:
+      type: array
+      items:
+        type: string
+    resource_requirements:
+      type: object
+      properties:
+        cpu_cores:
+          type: integer
+        execution_time_min:
+          type: integer
+          format: int64
+        preemptible:
+          type: boolean
+        ram_gb:
+          type: number
+        disk_gb:
+          type: integer
+          format: int64
+        zones:
+          type: array
+          items:
+            type: string
+    tes_uris:
+      type: array
+      items:
+        type: string
+    rank_services_response:
+      type: object
+      properties:
+        rank:
+          type: integer
+        tes_drs_combination:
+          $ref: '#/components/schemas/tes_drs_combinations'
+    tes_drs_combinations:
+      type: object
+      additionalProperties:
+          $ref: '#/components/schemas/objid_drs_combinations'
+    objid_drs_combinations:
+      type: object
+      properties:
+        object_id:
+          additionalProperties:
+            type: string
