@@ -49,7 +49,7 @@ def fetch_tes_task_info(
         task_info = _fetch_tes_task_info(
             uri=uri,
             resource_requirements=resource_requirements,
-            timeout = timeout,
+            timeout=timeout,
         )
 
         # If available, add task info to results container

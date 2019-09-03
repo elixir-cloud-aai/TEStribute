@@ -157,7 +157,7 @@ def _fetch_drs_objects_metadata(
                     "out."
                 ).format(uri=uri)
             )
-            return {}
+            continue
     
     # Return object metadata
     return objects_metadata
