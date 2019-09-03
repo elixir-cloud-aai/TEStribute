@@ -82,7 +82,7 @@ def fetch_drs_objects_metadata(
                 raise FileNotFoundError
         
         # Return results
-        return result_dict
+    return result_dict
          
 
 def _fetch_drs_objects_metadata(
