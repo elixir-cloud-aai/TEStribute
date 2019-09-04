@@ -11,50 +11,59 @@ info:
 paths:
   /rank_services:
     post:
-      operationId: rank_services
-      description: Creates a new pet in the store.  Duplicates are allowed
+      summary: |-
+        Returns a rank-ordered list of GA4GH TES and DRS services
+        to use when submitting a TES task to decrease total costs and or
+        time.
+      operationId: RankServices
       requestBody:
-        description: Pet to add to the store
+        description: |-
+          GA4GH TES and DRS services as well as resource
+          requirements of the task and the mode (or weight)
+          to cost/time to be given
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/rank_services_requirements'
+              $ref: '#/components/schemas/rankServicesRequirements'
       responses:
         '200':
-          description: ranking successful
+          description: |-
+            On a successful ranking of provided inputs a ranked list
+            of TES services with DRS services correspond to the
+            object_ids of the required DRS inputs/outputs are returned
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/rank_services_response'
+                $ref: '#/components/schemas/rankServicesResponse'
 
 components:
   schemas:
-    rank_services_requirements:
+    rankServicesRequirements:
       type: object
       properties:
         drs_ids:
-          $ref: '#/components/schemas/drs_ids'
+          $ref: '#/components/schemas/drsIds'
         drs_uris:
-          $ref: '#/components/schemas/drs_uris'
+          $ref: '#/components/schemas/drsUris'
         mode:
           anyOf:
             - type: integer
             - type: string
             - type: number
         resource_requirements:
-          $ref: '#/components/schemas/resource_requirements'
+          $ref: '#/components/schemas/resourceRequirements'
         tes_uris:
-          $ref: '#/components/schemas/tes_uris'
-    drs_ids:
+          $ref: '#/components/schemas/tesUris'
+    drsIds:
       type: array
       items:
         type: string
-    drs_uris:
+    drsUris:
       type: array
       items:
         type: string
-    resource_requirements:
+    resourceRequirements:
       type: object
       properties:
         cpu_cores:
@@ -73,24 +82,26 @@ components:
           type: array
           items:
             type: string
-    tes_uris:
+    tesUris:
       type: array
       items:
         type: string
-    rank_services_response:
+    rankServicesResponse:
       type: object
       properties:
         rank:
           type: integer
         tes_drs_combination:
-          $ref: '#/components/schemas/tes_drs_combinations'
-    tes_drs_combinations:
+          $ref: '#/components/schemas/tesDrsCombinations'
+    tesDrsCombinations:
       type: object
       additionalProperties:
-          $ref: '#/components/schemas/objid_drs_combinations'
-    objid_drs_combinations:
+          $ref: '#/components/schemas/objIdDrsCombinations'
+    objIdDrsCombinations:
       type: object
       properties:
         object_id:
           additionalProperties:
             type: string
+      example:
+        "obj_id": "drs_uri"
