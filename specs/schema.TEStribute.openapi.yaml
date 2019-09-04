@@ -1,13 +1,13 @@
 openapi: "3.0.0"
 info:
-  version: 0.0.1
+  version: 0.1.0
   title: TEStribute OpenAPI specification
   contact:
-    name: 'Elixir Europe'
+    name: 'ELIXIR Cloud & AAI group'
     email: 'alexander.kanitz@alumni.ethz.ch'
   license:
     name: Apache 2.0
-    url: 'https://github.com/elixir-europe/TEStribute/blob/dev/LICENSE'
+    url: 'https://www.apache.org/licenses/LICENSE-2.0'
 paths:
   /rank_services:
     post:
@@ -20,7 +20,9 @@ paths:
         description: |-
           GA4GH TES and DRS services as well as resource
           requirements of the task and the mode (or weight)
-          to cost/time to be given
+          GA4GH TES and DRS services as well as resource requirements of
+          the task as well as the mode based on which the rank_services
+          should assign ranks to services combinatons.
         required: true
         content:
           application/json:
@@ -36,9 +38,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/rankServicesResponse'
-
 components:
   schemas:
+    costs:
+      description: |-
+        This model can be used to define costs thought the spec, it
+        consists of an amout that species the units of the cost in
+        the currency denominations acceptable to the currency
+        property.
+      type: object
+      properties:
+        amount:
+          type: integer
+          format: int64
+        currency:
+          type: string
+          enum:
+            - ARBITRARY
+            - BTC
+            - EUR
+            - USD
+    drsIds:
+      description: |-
+        An array of drs object id's that are required by the task.
+      type: array
+      items:
+        type: string
+      example:
+        ["object_id1", "obj_id2",]
+    drsUris:
+      description: |-
+        A list of DRS service uris that the user wishes to use to read/write
+        objects to/from i.e DRS servies that the TEStribute should rank.
+      type: array
+      items:
+        type: string
+    objIdDrsCombinations:
+      description: |-
+        A dictionary that has string key and value, where the key will be
+        the object id and the value will be the drs_uri that the object
+        should be accessed from.
+      type: object
+      properties:
+        object_id:
+          additionalProperties:
+            type: string
+      example:
+        "obj_id": "drs_uri"
+    rankedServiceObject:
+      type: object
+      properties:
+        rank:
+          description: |-
+            The rank that the service combinitions in the object have.
+          type: integer
+        tes_drs_combination:
+          $ref: '#/components/schemas/tesDrsCombinations'
+        drs_costs:
+          $ref: '#/components/schemas/costs'
+        tes_time:
+          $ref: '#/components/schemas/tesTime'
+        total_costs:
+          $ref: '#/components/schemas/costs'
     rankServicesRequirements:
       type: object
       properties:
@@ -47,61 +108,83 @@ components:
         drs_uris:
           $ref: '#/components/schemas/drsUris'
         mode:
+          description: |-
+            Desired weight to cost/time or specify either as a string
+            to run the rank_services() to consider only cost or only
+            time while ranking the services.
           anyOf:
             - type: integer
             - type: string
+              enum:
+                - cost
+                - time
             - type: number
         resource_requirements:
           $ref: '#/components/schemas/resourceRequirements'
         tes_uris:
           $ref: '#/components/schemas/tesUris'
-    drsIds:
+    rankServicesResponse:
       type: array
+      description: |-
+        An array conraining all the ranked combinitions of services.
       items:
-        type: string
-    drsUris:
-      type: array
-      items:
-        type: string
+        $ref: '#/components/schemas/rankedServiceObject'
     resourceRequirements:
       type: object
       properties:
         cpu_cores:
+          description: |-
+            Required number of CPU cores the task needs for execution
           type: integer
         execution_time_min:
+          description: |-
+            Approximate time the taks will take for execution if provided
+            the cpu_cores and ram_gb specified in ram_gb and disk_gb
+            fields in minutes.
           type: integer
           format: int64
         preemptible:
           type: boolean
         ram_gb:
+          description: |-
+            RAM in GB required by the task for execution
           type: number
         disk_gb:
+          description: |-
+            Disk space in GB required by the task for execution
           type: integer
           format: int64
         zones:
           type: array
           items:
             type: string
+    tesDrsCombinations:
+      description: |-
+        A nested dictionary for TES services as keys with values as key
+        value pairs of IDs of objects that are needed by the task and
+        the DRS service uri which is recommended for that object.
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/objIdDrsCombinations'
+    tesTime:
+      description: |-
+        Desctibes time as a numerical value and alongside unit.
+      type: object
+      properties:
+        duration:
+          type: integer
+        unit:
+          description: |-
+            Unit of time
+          type: string
+          enum:
+            - SECONDS
+            - MINUTES
+            - HOURS
     tesUris:
+      description: |-
+        A list of TES service uris that the user sees as options to execute
+        task at and the TEStribute should consider and options.
       type: array
       items:
         type: string
-    rankServicesResponse:
-      type: object
-      properties:
-        rank:
-          type: integer
-        tes_drs_combination:
-          $ref: '#/components/schemas/tesDrsCombinations'
-    tesDrsCombinations:
-      type: object
-      additionalProperties:
-          $ref: '#/components/schemas/objIdDrsCombinations'
-    objIdDrsCombinations:
-      type: object
-      properties:
-        object_id:
-          additionalProperties:
-            type: string
-      example:
-        "obj_id": "drs_uri"
