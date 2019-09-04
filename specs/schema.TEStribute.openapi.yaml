@@ -18,8 +18,6 @@ paths:
       operationId: RankServices
       requestBody:
         description: |-
-          GA4GH TES and DRS services as well as resource
-          requirements of the task and the mode (or weight)
           GA4GH TES and DRS services as well as resource requirements of
           the task as well as the mode based on which the rank_services
           should assign ranks to services combinatons.
