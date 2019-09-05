@@ -19,8 +19,8 @@ paths:
       requestBody:
         description: |-
           GA4GH TES and DRS services as well as resource requirements of
-          the task as well as the mode based on which the rank_services
-          should assign ranks to services combinatons.
+          the task and the mode based on which the rank_services
+          should assign ranks to service combinatons.
         required: true
         content:
           application/json:
@@ -30,7 +30,7 @@ paths:
         '200':
           description: |-
             On a successful ranking of provided inputs a ranked list
-            of TES services with DRS services correspond to the
+            of TES services with DRS services corresponding to the
             object_ids of the required DRS inputs/outputs are returned
           content:
             application/json:
@@ -40,10 +40,10 @@ components:
   schemas:
     costs:
       description: |-
-        This model can be used to define costs thought the spec, it
-        consists of an amout that species the units of the cost in
-        the currency denominations acceptable to the currency
-        property.
+        This model can be used to define costs through-out the spec, it
+        has two properties the amout and the currency. The fromer is an
+        integer value and the latter an enum from the 4 possible 
+        currency denominations listed below.
       type: object
       properties:
         amount:
@@ -58,7 +58,7 @@ components:
             - USD
     drsIds:
       description: |-
-        An array of drs object id's that are required by the task.
+        An array of DRS object IDs that are required by the task.
       type: array
       items:
         type: string
@@ -66,15 +66,15 @@ components:
         ["object_id1", "obj_id2",]
     drsUris:
       description: |-
-        A list of DRS service uris that the user wishes to use to read/write
-        objects to/from i.e DRS servies that the TEStribute should rank.
+        A list of DRS service URIs that the user wishes to use to read/write
+        objects to/from. Array of DRS servies that the TEStribute should rank.
       type: array
       items:
         type: string
     objIdDrsCombinations:
       description: |-
         A dictionary that has string key and value, where the key will be
-        the object id and the value will be the drs_uri that the object
+        the Object ID and the value will be the drs_uri that the object
         should be accessed from.
       type: object
       properties:
