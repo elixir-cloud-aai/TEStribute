@@ -12,161 +12,101 @@ paths:
   /rank_services:
     post:
       summary: |-
-        Returns a rank-ordered list of GA4GH TES and DRS services
-        to use when submitting a TES task to decrease total costs and or
-        time.
+        Given lists of known GA4GH TES and DRS instances and a
+        task's resource requirements, the endpoint returns
+        estimates for the task's total time and cost requirements
+        for every available combination of TES and DRS instances,
+        the latter separately for each input object. By passing a
+        rank mode, service combinations are ranked either by
+        increasing times, costs or combinations thereof.
       operationId: RankServices
       requestBody:
         description: |-
-          GA4GH TES and DRS services as well as resource requirements of
-          the task and the mode based on which the rank_services
-          should assign ranks to service combinatons.
+          Lists of GA4GH TES and DRS instances, task resource
+          requirements and the rank mode.
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/rankServicesRequirements'
+              $ref: '#/components/schemas/request'
       responses:
         '200':
           description: |-
-            On a successful ranking of provided inputs a ranked list
-            of TES services with DRS services corresponding to the
-            object_ids of the required DRS inputs/outputs are returned
+            All available combinations of TES and DRS instances,
+            the latter indicated separately for each input object,
+            rank-ordered according to the rank mode.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/rankServicesResponse'
+                $ref: '#/components/schemas/response'
 components:
   schemas:
+    accessURIs:
+      description: |-
+        Access URIs for a TES instance and, if available,
+        a task's input objects.
+      type: object
+      properties:
+        tes_uri:
+          description: |-
+            Access URI for the TES instance.
+          type: string
+          format: uri
+      additionalProperties: true
+      required:
+        - tes_uri
+      example:
+        tes_uri: "https://://tes-1.service"
+        input_object_1: "https://object-store-1.org/object-1"
+        input_object_2: "https://object-store-2.org/object-2"
+        input_object_3: "https://object-store-3.org/object-3"
     costs:
       description: |-
-        This model can be used to define costs through-out the spec, it
-        has two properties the amout and the currency. The fromer is an
-        integer value and the latter an enum from the 4 possible 
-        currency denominations listed below.
+        Describes costs with a given value and currency.
       type: object
       properties:
         amount:
-          type: integer
-          format: int64
+          description: Numeric value.
+          type: number
+          format: double
         currency:
+          description: Currency/unit.
           type: string
+          format: currency
           enum:
             - ARBITRARY
             - BTC
             - EUR
             - USD
-    drsIds:
+      required:
+        - amount
+        - currency
+      example:
+        amount: 1000
+        currency: "BTC"
+    drsIDs:
       description: |-
-        An array of DRS object IDs that are required by the task.
+        DRS IDs of objects required by the task.
       type: array
       items:
         type: string
+      default: []
       example:
-        ["object_id1", "obj_id2",]
-    drsUris:
+        ["object_id-1", "object_id-2", "object_id-3"]
+    drsURIs:
       description: |-
-        A list of DRS service URIs that the user wishes to use to read/write
-        objects to/from. Array of DRS servies that the TEStribute should rank.
+        URIs of known DRS instances that objects may be read from
+        or written to.
       type: array
       items:
         type: string
-    objIdDrsCombinations:
-      description: |-
-        A dictionary that has string key and value, where the key will be
-        the Object ID and the value will be the drs_uri that the object
-        should be accessed from.
-      type: object
-      properties:
-        object_id:
-          additionalProperties:
-            type: string
+        format: uri
+      default: []
       example:
-        "obj_id": "drs_uri"
-    rankedServiceObject:
-      type: object
-      properties:
-        rank:
-          description: |-
-            The rank that the service combinitions in the object have.
-          type: integer
-        tes_drs_combination:
-          $ref: '#/components/schemas/tesDrsCombinations'
-        drs_costs:
-          $ref: '#/components/schemas/costs'
-        tes_time:
-          $ref: '#/components/schemas/tesTime'
-        total_costs:
-          $ref: '#/components/schemas/costs'
-    rankServicesRequirements:
-      type: object
-      properties:
-        drs_ids:
-          $ref: '#/components/schemas/drsIds'
-        drs_uris:
-          $ref: '#/components/schemas/drsUris'
-        mode:
-          description: |-
-            Desired weight to cost/time or specify either as a string
-            to run the rank_services() to consider only cost or only
-            time while ranking the services.
-          anyOf:
-            - type: integer
-            - type: string
-              enum:
-                - cost
-                - time
-            - type: number
-        resource_requirements:
-          $ref: '#/components/schemas/resourceRequirements'
-        tes_uris:
-          $ref: '#/components/schemas/tesUris'
-    rankServicesResponse:
-      type: array
+        ["https://drs-1.service", "https://drs-2.service", "https://drs-3.service"]
+    duration:
       description: |-
-        An array conraining all the ranked combinitions of services.
-      items:
-        $ref: '#/components/schemas/rankedServiceObject'
-    resourceRequirements:
-      type: object
-      properties:
-        cpu_cores:
-          description: |-
-            Required number of CPU cores the task needs for execution
-          type: integer
-        execution_time_min:
-          description: |-
-            Approximate time the taks will take for execution if provided
-            the cpu_cores and ram_gb specified in ram_gb and disk_gb
-            fields in minutes.
-          type: integer
-          format: int64
-        preemptible:
-          type: boolean
-        ram_gb:
-          description: |-
-            RAM in GB required by the task for execution
-          type: number
-        disk_gb:
-          description: |-
-            Disk space in GB required by the task for execution
-          type: integer
-          format: int64
-        zones:
-          type: array
-          items:
-            type: string
-    tesDrsCombinations:
-      description: |-
-        A nested dictionary for TES services as keys with values as key
-        value pairs of IDs of objects that are needed by the task and
-        the DRS service uri which is recommended for that object.
-      type: object
-      additionalProperties:
-        $ref: '#/components/schemas/objIdDrsCombinations'
-    tesTime:
-      description: |-
-        Desctibes time as a numerical value and alongside unit.
+        Desctibes a duration with a given value and unit.
       type: object
       properties:
         duration:
@@ -179,10 +119,137 @@ components:
             - SECONDS
             - MINUTES
             - HOURS
-    tesUris:
+      required:
+        - duration
+        - unit
+      example:
+        duration: 5
+        unit: MINUTES
+    request:
       description: |-
-        A list of TES service uris that the user sees as options to execute
-        task at and the TEStribute should consider and options.
+        Request schema describing the endpoint's input.
+      type: object
+      properties:
+        drs_ids:
+          $ref: '#/components/schemas/drsIDs'
+        drs_uris:
+          $ref: '#/components/schemas/drsURIs'
+        mode:
+          description: |-
+            Mode with which service combinations are ranked. Services
+            can be ranked by either costs, time or both. For the latter,
+            specify a weight between 0 and 1, the boundaries
+            representing weights at which services are ranked entirely
+            by cost and time, respectively. It is also possible to
+            randomize rankings (specify 'random' or -1).
+          oneOf:
+            - type: integer
+              minimum: -1
+              maximum: 1
+            - type: number
+              exclusiveMaximum: true
+              exclusiveMinimum: true
+              maximum: 1
+              minimum: 0
+            - type: string
+              enum:
+                - cost
+                - random
+                - time
+          default: "random"
+          example: "random"
+        resource_requirements:
+          $ref: '#/components/schemas/resourceRequirements'
+        tes_uris:
+          $ref: '#/components/schemas/tesURIs'
+      required:
+        - resource_requirements
+        - tes_uris
+    response:
+      description: |-
+        Response schema describing the endpoint's output.
+      type: array
+      items:
+        $ref: '#/components/schemas/serviceCombination'
+    resourceRequirements:
+      type: object
+      properties:
+        cpu_cores:
+          description: |-
+            Requested number of CPUs.
+          type: integer
+          format: int64
+        disk_gb:
+          description: |-
+            Requested disk size in gigabytes (GB).
+          type: integer
+          format: double
+        execution_time_min:
+          description: |-
+            Requested execution in minutes (min).
+          type: integer
+          format: int64
+        preemptible:
+          description: |-
+            Is the task allowed to run on preemptible compute
+            instances (e.g. AWS Spot)?
+          type: boolean
+          format: boolean
+          default: true
+        ram_gb:
+          description: |-
+            Requested RAM required in gigabytes (GB).
+          type: number
+          format: double
+        zones:
+          description: |-
+            Request that the task be run in these compute zones.
+          type: array
+          items:
+            type: string
+          default: []
+      required:
+        - cpu_cores
+        - disk_gb
+        - execution_time_min
+        - ram_gb
+      example:
+        cpu_cores: 1
+        execution_time_min: 60
+        preemptible: true
+        ram_gb: 4
+        disk_gb: 1
+        zones: ["zone-1", "zone-2"]
+    serviceCombination:
+      description: |-
+        A combination of TES and input DRS object access URIs
+        together with cost/time estimates and a rank.
+      type: object
+      properties:
+        access_uris:
+          $ref: '#/components/schemas/accessURIs'
+        cost_estimate:
+          $ref: '#/components/schemas/costs'
+        rank:
+          description: |-
+            Rank among all service combinations. Meaning of rank
+            dependent on rank mode.
+          type: integer
+          format: int64
+          example: 1
+        time_estimate:
+          $ref: '#/components/schemas/duration'
+      required:
+        - access_uris
+        - cost_estimate
+        - rank
+        - time_estimate
+    tesURIs:
+      description: |-
+        URIs of known TES instances that the task may be computed on.
       type: array
       items:
         type: string
+        format: uri
+      example:
+        ["https://tes-1.service", "https://tes-2.service", "https://tes-3.service"]
