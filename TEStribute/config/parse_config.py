@@ -8,6 +8,7 @@ import yaml
 
 logger = logging.getLogger("TEStribute")
 
+
 def config_parser(
     default_path: str = os.path.abspath(
         os.path.join(

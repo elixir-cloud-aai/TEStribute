@@ -189,20 +189,25 @@ def rank_services(
 
     rank_dict = sorted(rank_dict.items(), key=lambda item: item[1])
 
-    # construct final dict
-    return_dict_full = {}
+    # construct final return object
+    return_array_full = []
     rank = 1
     for i in rank_dict:
         return_dict = {}
-        return_dict["TES"] = i[0]
+
+        return_dict["access_uris"] = {}
+        return_dict["access_uris"]["tes_uri"] = i[0]
         for drs_id in drs_object_info.keys():
-            return_dict[drs_id] = tes_info_drs[i[0]][drs_id][0]
-            return_dict["drs_costs"] = tes_info_drs[i[0]]["drs_costs"]
-            return_dict["total_costs"] = tes_info_drs[i[0]]["total_costs"]
-            return_dict["tes_time"] = tes_task_info[i[0]]["queue_time"]
-        return_dict_full.update({rank: return_dict})
+            return_dict["access_uris"][drs_id] = tes_info_drs[i[0]][drs_id][0]
+        return_dict["cost_estimate"] = {
+            "amount": tes_info_drs[i[0]]["total_costs"],
+            "currency": tes_info_drs[i[0]]["currency"]
+        }
+        return_dict["time_estimate"] = tes_task_info[i[0]]["queue_time"]
+        return_dict["rank"] = rank
+        return_array_full.extend([return_dict])
         rank += 1
-    return return_dict_full
+    return return_array_full
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 

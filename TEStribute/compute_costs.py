@@ -71,5 +71,10 @@ def sum_costs(total_tes_costs: Dict, data_transfer_rate: Dict, drs_objects_locat
 
     # to fix overwriting of elemets in the loop it is called from
     # return_info = dict(return_info)
-    return_info.update({"drs_costs": {"amount": sum_drs, "currency": currency},"total_costs": total_cost})
+    return_info.update({
+        "drs_costs": {"amount": sum_drs, "currency": currency},
+        "total_costs": total_cost,
+        "currency": currency
+    })
+
     return return_info
