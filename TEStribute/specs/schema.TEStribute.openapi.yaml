@@ -21,7 +21,7 @@ paths:
         the latter separately for each input object. By passing a
         rank mode, service combinations are ranked either by
         increasing times, costs or combinations thereof.
-      operationId: rank_services
+      operationId: RankServices
       requestBody:
         description: |-
           Lists of GA4GH TES and DRS instances, task resource

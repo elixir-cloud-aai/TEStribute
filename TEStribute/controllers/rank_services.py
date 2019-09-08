@@ -1,9 +1,9 @@
 import json
 
-from TEStribute import rank_services as rank_services_response
+from TEStribute import rank_services
 
 
-def rank_services(body):
+def RankServices(body):
 
     ranked_response = __post_rank_services(body)
 
@@ -15,7 +15,7 @@ def rank_services(body):
 
 def __post_rank_services(params):
 
-    response = rank_services_response(
+    response = rank_services(
         drs_ids=params.get("drs_ids"),
         drs_uris=params.get("drs_uris"),
         mode=params.get("mode"),
