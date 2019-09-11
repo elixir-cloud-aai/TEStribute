@@ -1,11 +1,12 @@
 import json
 
-from werkzeug.exceptions import (BadRequest, InternalServerError)
+from werkzeug.exceptions import (BadRequest, InternalServerError, Unauthorized)
 
 from TEStribute import rank_services
+from TEStribute.decorators import auth_token_optional
 from TEStribute.errors import (ResourceUnavailableError, ValidationError)
 
-
+@auth_token_optional
 def RankServices(body):
 
     ranked_response = __post_rank_services(body)
@@ -30,6 +31,8 @@ def __post_rank_services(params):
         raise BadRequest(e.args) from e
     except ResourceUnavailableError as e:
         raise BadRequest(e.args) from e
+    except Unauthorized as e:
+        raise Unauthorized(e.args) from e
     except Exception as e:
         raise InternalServerError(e.args) from e
 
