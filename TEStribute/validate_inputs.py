@@ -2,8 +2,7 @@
 import logging
 from typing import (Any, Dict, List, Tuple, Union)
 
-from werkzeug.exceptions import BadRequest
-
+from TEStribute.errors import ValidationError
 from TEStribute.modes import Mode
 
 logger = logging.getLogger("TEStribute")
@@ -90,7 +89,7 @@ def validate_input_parameters(
                         f"Parameter 'drs_ids' contains the following item that" \
                         f"is not a string: {item}"
                     )
-                    raise BadRequest(
+                    raise ValidationError(
                         f"Parameter 'drs_ids' contains the following item that" \
                         f"is not a string: {item}"
                     )
@@ -99,7 +98,7 @@ def validate_input_parameters(
                 drs_ids = None
         else:
             logger.error("Parameter 'drs_ids' is not a list object.")
-            raise BadRequest("Parameter 'drs_ids' is not a list object.")
+            raise ValidationError("Parameter 'drs_ids' is not a list object.")
 
     # Check DRS instances
     # Empty list is set to `None`, unless there are DRS identifiers
@@ -111,7 +110,7 @@ def validate_input_parameters(
                         f"Parameter 'drs_uris' contains the following item " \
                         f"that is not a string: {item}"
                     )
-                    raise BadRequest(
+                    raise ValidationError(
                         f"Parameter 'drs_uris' contains the following item " \
                         f"that is not a string: {item}"
                     )
@@ -122,7 +121,7 @@ def validate_input_parameters(
                     logger.error(
                         "No services for accesing input objects defined."
                     )
-                    raise BadRequest(
+                    raise ValidationError(
                         "No services for accesing input objects defined."
                     )
                 # Set empty list to None
@@ -130,7 +129,7 @@ def validate_input_parameters(
                     drs_uris = None
         else:
             logger.error("Parameter 'drs_uris' is not a list object.")
-            raise BadRequest("Parameter 'drs_uris' is not a list object.")
+            raise ValidationError("Parameter 'drs_uris' is not a list object.")
     else:
         # If DRS objects are required, at least one DRS instance has
         # to be available
@@ -138,14 +137,14 @@ def validate_input_parameters(
             logger.error(
                 "No services for accesing input objects defined."
             )
-            raise BadRequest(
+            raise ValidationError(
                 "No services for accesing input objects defined."
             )
 
     # Check run mode
     if mode is None:
         logger.error("Parameter 'mode' is invalid.")
-        raise BadRequest("Parameter 'mode' is invalid.")
+        raise ValidationError("Parameter 'mode' is invalid.")
 
     # Check resource requirements
     if isinstance(resource_requirements, dict):
@@ -156,13 +155,13 @@ def validate_input_parameters(
                     f"Parameter 'resource_requirements' does not contain the " \
                     f"following required key: {key}"
                 )
-                raise BadRequest(
+                raise ValidationError(
                     f"Parameter 'resource_requirements' does not contain the " \
                     f"following required key: {key}"
                 )
     else:
         logger.error("Parameter 'resource_requirements' is not a dictionary.")
-        raise BadRequest(
+        raise ValidationError(
             "Parameter 'resource_requirements' is not a dictionary."
         )
 
@@ -175,16 +174,16 @@ def validate_input_parameters(
                     f"Parameter 'tes_uris' contains the following item that " \
                     f"is not a string: {item}"
                 )
-                raise BadRequest(
+                raise ValidationError(
                     f"Parameter 'tes_uris' contains the following item that " \
                     f"is not a string: {item}"
                 )
         if not tes_uris:
             logger.error("Parameter 'tes_uris' is empty.")
-            raise BadRequest("Parameter 'tes_uris' is empty.")
+            raise ValidationError("Parameter 'tes_uris' is empty.")
     else:
         logger.error("Parameter 'tes_uris' is not a list object.")
-        raise BadRequest("Parameter 'tes_uris' is not an list object.")
+        raise ValidationError("Parameter 'tes_uris' is not an list object.")
     
     # Return sanitizied/validated parameters
     return (

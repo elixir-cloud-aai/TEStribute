@@ -5,12 +5,11 @@ import logging
 import os
 from typing import (List, Dict, Union)
 
-from werkzeug.exceptions import BadRequest
-
 from TEStribute.access_drs import fetch_drs_objects_metadata
 from TEStribute.access_tes import fetch_tes_task_info
 from TEStribute.compute_costs import sum_costs
 from TEStribute.config.parse_config import config_parser
+from TEStribute.errors import ResourceUnavailableError
 from TEStribute.log.logging_functions import log_yaml
 from TEStribute.log import setup_logger
 from TEStribute.modes import Mode
@@ -121,7 +120,7 @@ def rank_services(
             resource_requirements=resource_requirements,
             tes_uris=tes_uris,
         )
-    except BadRequest:
+    except ResourceUnavailableError:
         raise
 
     # Log validated input parameters 
@@ -142,7 +141,7 @@ def rank_services(
             logger.error(
                 "No services for accesing input objects defined."
             )
-            raise BadRequest(
+            raise ResourceUnavailableError(
                 "No services for accesing input objects defined."
             )
         else:
@@ -152,7 +151,7 @@ def rank_services(
                     drs_ids=drs_ids,
                     timeout=config["timeout"]
                 )
-            except BadRequest:
+            except ResourceUnavailableError:
                 raise
     else:
         drs_object_info = dict()
@@ -162,7 +161,7 @@ def rank_services(
         logger.error(
             "No execution services defined."
         )
-        raise BadRequest(
+        raise ResourceUnavailableError(
             "No execution services defined."
         )
     else:
@@ -172,7 +171,7 @@ def rank_services(
                 resource_requirements=resource_requirements,
                 timeout=config["timeout"]
             )
-        except BadRequest:
+        except ResourceUnavailableError:
             raise
 
     # CHECK

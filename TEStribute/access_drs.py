@@ -9,7 +9,8 @@ from bravado.exception import HTTPNotFound
 import drs_client
 from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
-from werkzeug.exceptions import BadRequest
+
+from TEStribute.errors import ResourceUnavailableError
 
 logger = logging.getLogger("TEStribute")
 
@@ -71,7 +72,7 @@ def fetch_drs_objects_metadata(
                         f"Object '{drs_id}' is not available at any of the " \
                         f"specified DRS instances."
                     )
-                    raise BadRequest(
+                    raise ResourceUnavailableError(
                         f"Object '{drs_id}' is not available at any of the " \
                         f"specified DRS instances."
                     )

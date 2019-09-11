@@ -8,7 +8,8 @@ from bravado.exception import HTTPNotFound
 from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
 import tes_client
-from werkzeug.exceptions import BadRequest
+
+from TEStribute.errors import ResourceUnavailableError
 
 logger = logging.getLogger("TEStribute")
 
@@ -62,7 +63,7 @@ def fetch_tes_task_info(
         logger.error(
             "None of the specified TES instances provided any task info."
         )
-        raise BadRequest(
+        raise ResourceUnavailableError(
             "None of the specified TES instances provided any task info."
         )
     

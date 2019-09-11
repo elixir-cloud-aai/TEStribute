@@ -38,6 +38,21 @@ def register_error_handlers(app: App) -> App:
     return app
 
 
+# Custom exceptions
+class ValidationError(BaseException):
+    """Error raised for invalid input parameters."""
+
+    def __init__(self, description: str, **kwargs):
+        super(ValidationError, self).__init__(description, **kwargs)
+
+
+class ResourceUnavailableError(BaseException):
+    """Error raised if a required resource is unavailable."""
+
+    def __init__(self, description: str, **kwargs):
+        super(ResourceUnavailableError, self).__init__(description, **kwargs)
+
+
 # Custom error handlers
 def handle_bad_request_validation(response: Response) -> Response:
     return Response(
