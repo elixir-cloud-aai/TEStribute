@@ -29,7 +29,7 @@ def rank_services(
     mode: Union[float, int, Mode, None, str] = None,
     resource_requirements: Union[Dict, None] = None,
     tes_uris: Union[List, None] = None,
-) -> List:
+) -> Dict[str, List]:
     """
     Main function that returns a rank-ordered list of GA4GH TES and DRS
     services to use when submitting a TES task to decrease total costs and or
@@ -218,7 +218,11 @@ def rank_services(
         return_dict["rank"] = rank
         return_array_full.extend([return_dict])
         rank += 1
-    return return_array_full
+
+    # Add warnings
+    response = {"warnings": [], "service_combinations": return_array_full}
+
+    return response
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 

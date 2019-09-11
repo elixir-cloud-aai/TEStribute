@@ -138,34 +138,72 @@ to the `rank_services()` function, which defines the following parameters:
 
 #### Example call
 
+##### API service
+
+```json
+{
+  "drs_ids": [
+    "a001",
+    "a002"
+  ],
+  "drs_uris": [
+    "http://131.152.229.71/ga4gh/drs/v1/",
+    "http://193.166.24.114/ga4gh/drs/v1/"
+  ],
+  "mode": 0.5,
+  "resource_requirements": {
+    "cpu_cores": 1,
+    "disk_gb": 1,
+    "execution_time_min": 30,
+    "ram_gb": 1
+  },
+  "tes_uris": [
+    "http://131.152.229.70/ga4gh/tes/v1/",
+    "http://193.166.24.111/ga4gh/tes/v1/"
+  ]
+}
+```
+
+##### CLI
+
+Coming soon...
+
+In this execution mode, it is not necessary to pass arguments for all
+parameters. Omit any arguments to use the corresponding default values as
+defined in the [config] file.
+
+##### Importing `rank_services()`
+
 ```py
+from TEStribute import rank_services()
+
 rank_services(
     drs_ids=[
-        "id_input_file_1",
-        "id_input_file_2"
+        "a001",
+        "a002"
     ],
     resource_requirements={
-        "cpu_cores": "2",
-        "ram_gb": "8",
-        "disk_gb": "10",
-        "execution_time_min": "300"
+        "cpu_cores": 1,
+        "ram_gb": 1,
+        "disk_gb": 1,
+        "execution_time_min": 30
     },
     tes_uris=[
-        "https://some.tes.service/",
-        "https://another.tes.service/"
+        "http://131.152.229.70/ga4gh/tes/v1/",
+        "http://193.166.24.111/ga4gh/tes/v1/"
     ],
     drs_uris=[
-        "https://some.drs.service/",
-        "https://another.drs.service/"
+        "http://131.152.229.71/ga4gh/drs/v1/",
+        "http://193.166.24.114/ga4gh/drs/v1/"
     ],
-    mode="cost",
+    mode=0.5,
     auth_header=None
 )
 ```
 
-It is not necessary to pass arguments for all parameters. Omit any arguments to
-use the corresponding default values as defined in the [config] file or,
-alternatively, pass `None`.
+In this execution mode, it is not necessary to pass arguments for all
+parameters. Omit any arguments to use the corresponding default values as
+defined in the [config] file or, alternatively, pass `None`.
 
 #### Return type
 

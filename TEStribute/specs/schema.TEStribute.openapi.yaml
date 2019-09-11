@@ -223,6 +223,7 @@ components:
       required:
       - service_combinations
       - warnings
+      type: object
       properties:
         service_combinations:
           type: array
