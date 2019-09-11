@@ -3,7 +3,7 @@ Functions that interact with the DRS service
 """
 from collections import defaultdict
 import logging
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List, Union
 
 from bravado.exception import HTTPNotFound
 import drs_client
@@ -14,8 +14,8 @@ logger = logging.getLogger("TEStribute")
 
 
 def fetch_drs_objects_metadata(
-    drs_uris: Union[List, Set, Tuple],
-    drs_ids: Union[List, Set, Tuple],
+    drs_uris: List[str],
+    drs_ids: List[str],
     check_results: bool = True,
     timeout: float = 3,
 ) -> Dict:
@@ -87,7 +87,7 @@ def fetch_drs_objects_metadata(
 
 def _fetch_drs_objects_metadata(
     uri: str,
-    ids: Union[List, Set, Tuple],
+    ids: List[str],
     timeout: float = 3,
 ) -> Dict:
     """

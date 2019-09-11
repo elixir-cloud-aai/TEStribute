@@ -3,7 +3,7 @@ Exposes TEStribute main function rank_services()
 """
 import logging
 import os
-from typing import Dict, List, Union
+from typing import (List, Dict, Union)
 
 from TEStribute.access_drs import fetch_drs_objects_metadata
 from TEStribute.access_tes import fetch_tes_task_info
@@ -133,35 +133,48 @@ def rank_services(
     
     # Get metadata for input objects
     if drs_ids is not None:
+        if drs_uris is None:
+            logger.critical(
+                "Task cannot be computed: no services for accesing input " \
+                "objects defined."
+            )
+            raise ValueError
+        else:
+            try:
+                drs_object_info = fetch_drs_objects_metadata(
+                    drs_uris=drs_uris,
+                    drs_ids=drs_ids,
+                    timeout=config["timeout"]
+                )
+            except Exception:
+                logger.critical(
+                    "Task cannot be computed: required input object(s) " \
+                    "cannot be accessed."
+                )
+                raise
+    else:
+        drs_object_info = dict()
+
+    # Get TES task info for resource requirements
+    if tes_uris is None:
+        logger.critical(
+            "Task cannot be computed: no execution services defined."
+        )
+        raise ValueError
+    else:
         try:
-            drs_object_info = fetch_drs_objects_metadata(
-                drs_uris=drs_uris,
-                drs_ids=drs_ids,
+            tes_task_info = fetch_tes_task_info(
+                tes_uris=tes_uris,
+                resource_requirements=resource_requirements,
                 timeout=config["timeout"]
             )
         except Exception:
             logger.critical(
                 (
-                    "Task cannot be computed: required input file(s) cannot be "
-                    "accessed."
+                    "Task cannot be computed: task info could not be obtained."
                 )
             )
-            raise
-
-    # Get TES task info for resource requirements
-    try:
-        tes_task_info = fetch_tes_task_info(
-            tes_uris=tes_uris,
-            resource_requirements=resource_requirements,
-            timeout=config["timeout"]
-        )
-    except Exception:
-        logger.critical(
-            (
-                "Task cannot be computed: task info could not be obtained."
-            )
-        )
-        raise 
+            raise 
 
     # CHECK
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>

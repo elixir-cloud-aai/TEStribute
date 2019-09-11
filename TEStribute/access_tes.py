@@ -2,7 +2,7 @@
 Functions that interact with the TES service
 """
 import logging
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List
 
 from bravado.exception import HTTPNotFound
 from requests.exceptions import ConnectionError, HTTPError, MissingSchema
@@ -13,7 +13,7 @@ logger = logging.getLogger("TEStribute")
 
 
 def fetch_tes_task_info(
-    tes_uris: Union[List, Set, Tuple],
+    tes_uris: List[str],
     resource_requirements: Dict,
     check_results: bool = True,
     timeout: float = 3,

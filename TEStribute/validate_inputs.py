@@ -1,7 +1,7 @@
 """Validates and sanitizes input parameters to `rank_services()`"""
 import collections.abc
 import logging
-from typing import Any, Dict, Iterable, Mapping, Tuple, Union
+from typing import (Any, Dict, List, Tuple, Union)
 
 from TEStribute.modes import Mode
 
@@ -9,13 +9,13 @@ logger = logging.getLogger("TEStribute")
 
 
 def validate_input_parameters(
-    defaults: Union[Mapping, None] = None,
-    drs_ids: Union[Iterable, None] = None,
-    drs_uris: Union[Iterable, None] = None,
+    defaults: Union[Dict, None] = None,
+    drs_ids: Union[List, None] = None,
+    drs_uris: Union[List, None] = None,
     mode: Union[float, int, Mode, None, str] = None,
-    resource_requirements: Union[Mapping, None] = None,
-    tes_uris: Union[Iterable, None] = None,
-) -> Tuple[Union[Iterable, None], Union[Iterable, None], Union[float, None], Union[Mapping, None], Union[Iterable, None]]:
+    resource_requirements: Union[Dict, None] = None,
+    tes_uris: Union[List, None] = None,
+) -> Tuple[Union[List, None], Union[List, None], float, Dict, List]:
     """
     Sets defaults, validates and sanitizes input parameters to
     `rank_services()` function.
@@ -148,9 +148,11 @@ def validate_input_parameters(
     if mode is None:
         error = True
         logger.error("Parameter 'mode' is invalid.")
+        raise ValueError
 
     # Check resource requirements
     if isinstance(resource_requirements, dict):
+        resource_requirements = dict(resource_requirements)
         for key in resource_requirements_keys:
             if not key in resource_requirements:
                 error =True
@@ -163,9 +165,11 @@ def validate_input_parameters(
     else:
         error = True
         logger.error("Parameter 'resource_requirements' is not a dictionary.")
+        raise ValueError
 
     # Check TES instances
-    if isinstance(tes_uris, collections.abc.Iterable):
+    if isinstance(tes_uris, list):
+        tes_uris = list(tes_uris)
         for item in tes_uris:
             if not isinstance(item, str):
                 error = True
@@ -181,6 +185,7 @@ def validate_input_parameters(
     else:
         error = True
         logger.error("Parameter 'tes_uris' is not an iterable object.")
+        raise ValueError
     
     # Raise ValueError if required parameters are missing/invalid 
     if error:
@@ -197,7 +202,7 @@ def validate_input_parameters(
 
 
 def set_defaults(
-    defaults: Mapping,
+    defaults: Dict,
     **kwargs: Any,
 ) -> Dict:
     """
