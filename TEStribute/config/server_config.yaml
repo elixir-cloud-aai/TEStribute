@@ -1,0 +1,9 @@
+# General server settings
+server:
+    host: 0.0.0.0
+    port: 8080
+    debug: True
+
+# OpenAPI specs
+openapi:
+    TEStribute: specs/schema.TEStribute.openapi.yaml

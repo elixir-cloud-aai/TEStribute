@@ -8,6 +8,7 @@ import yaml
 
 logger = logging.getLogger("TEStribute")
 
+
 def config_parser(
     default_path: str = os.path.abspath(
         os.path.join(
@@ -24,13 +25,11 @@ def config_parser(
         with open(default_path) as f:
             config = yaml.safe_load(f)
             logger.debug("Config loaded from" + default_path)
-    except (FileNotFoundError, PermissionError) as error:
+    except (FileNotFoundError, PermissionError) as e:
         logger.error(
-            (
-                "Config file not found. Ensure that default config file is "
-                "available and accessible at '{default_path}'."
-                "Execution aborted. "
-                "Original error message: {type}: {msg}"
-            ).format(default_path=default_path, type=type(error).__name__, msg=error)
+            f"Config file not found. Ensure that default config file is "
+            f"available and accessible at '{default_path}'."
+            f"Execution aborted. "
+            f"Original error message: {type(e).__name__}: {e}"
         )
     return config

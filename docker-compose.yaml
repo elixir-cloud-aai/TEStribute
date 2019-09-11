@@ -1,0 +1,13 @@
+version: '3.6'
+services:
+
+  testribute:
+    image: testribute:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: bash -c "cd /app/TEStribute; python server.py"
+    ports:
+      - "7979:8080"
+

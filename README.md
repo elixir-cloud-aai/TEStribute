@@ -42,7 +42,7 @@ python TEStribute/__init__.py
 
 ## Implementation details
 
-Given lists of available [GA4GH] [Task Execution Service] (TES) and [Data
+Given lists of available [GA4GH][1] [Task Execution Service] (TES) and [Data
 Repository Service] (DRS) instances, the DRS identifiers for all input files,
 and a task's compute resource requirements (e.g., extracted from a `POST /tasks`
 TES request), the software returns a list of combinations of TES and DRS
@@ -58,36 +58,57 @@ mockup services which implement these modifications/assumptions. The
 corresponding clients [TES-cli] and [DRS-cli] are used within `TEStribute`
 to interact with these services.
 
-The diagram shown below shows how the TEStribute works at the moment. 
+The diagram shown below shows how the TEStribute works at the moment.
 ![TEStribute_working]
 
-## Install
+## Installation
 
-### Requirements
+### API service (dockerized)
 
-* [Git] (tested with version 2.17.1)
-* [Python] (tested with versions 2.7.15+ & 3.6.8)
-* [pip] (tested with version 19.1.1)
-* [virtualenv] (tested with version 15.1.0)
+Ensure you have the following software installed:
 
-### Clone repository
+* [Docker](https://www.docker.com/) (18.06.1-ce, build e68fc7a)
+* [docker-compose](https://docs.docker.com/compose/) (1.23.1, build b02f1306)
+* [Git](https://git-scm.com/) (tested with version 2.17.1)
+
+> Note: These are the versions used for development/testing. Other versions
+> may or may not work.
+
+Clone repository and start Docker service
 
 ```bash
-git clone git@github.com:elixir-europe/TEStribute.git
-cd TEStribute
+git clone https://github.com/elixir-europe/proTES.git app
+cd app
+docker-compose up --build --detach
 ```
 
-### Install dependencies
+Visit Swagger UI
 
 ```bash
+firefox http://localhost:7979/ui/
+```
+
+### For CLI usage & imports
+
+Ensure you have the following software installed:
+
+* [Git](https://git-scm.com/) (tested with version 2.17.1)
+* [Python](https://www.python.org) (tested with version 3.6.8)
+* [pip](https://pip.pypa.io/en/stable/) (tested with version 19.2.2)
+* [virtualenv](https://virtualenv.pypa.io/en/latest/)
+  (tested with version 15.1.0)
+
+> Note: These are the versions used for development/testing. Other versions
+> may or may not work.
+
+Clone repository, install app & dependencies
+
+```bash
+git clone git@github.com:elixir-europe/TEStribute.git app
+cd app
 virtualenv -p `which python3` venv
 source venv/bin/activate
 pip install -r requirements.txt
-```
-
-### Install app
-
-```bash
 python setup.py develop
 ```
 
@@ -138,34 +159,72 @@ to the `rank_services()` function, which defines the following parameters:
 
 #### Example call
 
+##### API service
+
+```json
+{
+  "drs_ids": [
+    "a001",
+    "a002"
+  ],
+  "drs_uris": [
+    "http://131.152.229.71/ga4gh/drs/v1/",
+    "http://193.166.24.114/ga4gh/drs/v1/"
+  ],
+  "mode": 0.5,
+  "resource_requirements": {
+    "cpu_cores": 1,
+    "disk_gb": 1,
+    "execution_time_min": 30,
+    "ram_gb": 1
+  },
+  "tes_uris": [
+    "http://131.152.229.70/ga4gh/tes/v1/",
+    "http://193.166.24.111/ga4gh/tes/v1/"
+  ]
+}
+```
+
+##### CLI
+
+Coming soon...
+
+In this execution mode, it is not necessary to pass arguments for all
+parameters. Omit any arguments to use the corresponding default values as
+defined in the [config] file.
+
+##### Importing `rank_services()`
+
 ```py
+from TEStribute import rank_services()
+
 rank_services(
     drs_ids=[
-        "id_input_file_1",
-        "id_input_file_2"
+        "a001",
+        "a002"
     ],
     resource_requirements={
-        "cpu_cores": "2",
-        "ram_gb": "8",
-        "disk_gb": "10",
-        "execution_time_min": "300"
+        "cpu_cores": 1,
+        "ram_gb": 1,
+        "disk_gb": 1,
+        "execution_time_min": 30
     },
     tes_uris=[
-        "https://some.tes.service/",
-        "https://another.tes.service/"
+        "http://131.152.229.70/ga4gh/tes/v1/",
+        "http://193.166.24.111/ga4gh/tes/v1/"
     ],
     drs_uris=[
-        "https://some.drs.service/",
-        "https://another.drs.service/"
+        "http://131.152.229.71/ga4gh/drs/v1/",
+        "http://193.166.24.114/ga4gh/drs/v1/"
     ],
-    mode="cost",
+    mode=0.5,
     auth_header=None
 )
 ```
 
-It is not necessary to pass arguments for all parameters. Omit any arguments to
-use the corresponding default values as defined in the [config] file or,
-alternatively, pass `None`.
+In this execution mode, it is not necessary to pass arguments for all
+parameters. Omit any arguments to use the corresponding default values as
+defined in the [config] file or, alternatively, pass `None`.
 
 #### Return type
 

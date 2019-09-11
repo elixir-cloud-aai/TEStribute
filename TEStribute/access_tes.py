@@ -2,18 +2,20 @@
 Functions that interact with the TES service
 """
 import logging
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List
 
 from bravado.exception import HTTPNotFound
 from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
 import tes_client
 
+from TEStribute.errors import ResourceUnavailableError
+
 logger = logging.getLogger("TEStribute")
 
 
 def fetch_tes_task_info(
-    tes_uris: Union[List, Set, Tuple],
+    tes_uris: List[str],
     resource_requirements: Dict,
     check_results: bool = True,
     timeout: float = 3,
@@ -61,7 +63,9 @@ def fetch_tes_task_info(
         logger.error(
             "None of the specified TES instances provided any task info."
         )
-        raise HTTPError
+        raise ResourceUnavailableError(
+            "None of the specified TES instances provided any task info."
+        )
     
     # Return results
     return result_dict
@@ -95,17 +99,13 @@ def _fetch_tes_task_info(
         client = tes_client.Client(uri)
     except TimeoutError:
         logger.warning(
-            (
-                "TES unavailable: connection attempt to '{uri}' timed out."
-            ).format(uri=uri)
+            f"TES unavailable: connection attempt to '{uri}' timed out."
         )
         return {}
     except (ConnectionError, JSONDecodeError, HTTPNotFound, MissingSchema):
         logger.warning(
-            (
-                "TES unavailable: the provided URI '{uri}' could not be "
-                "resolved."
-            ).format(uri=uri)
+            f"TES unavailable: the provided URI '{uri}' could not be " \
+            f"resolved."
         )
         return {}
 
@@ -117,9 +117,7 @@ def _fetch_tes_task_info(
         )._as_dict()
     except TimeoutError:
         logger.warning(
-            (
-                "Connection attempt to TES {uri} timed out. TES "
-                "unavailable. Skipped."
-            ).format(uri=uri)
+            f"Connection attempt to TES {uri} timed out. TES " \
+            f"unavailable. Skipped."
         )
         return {}
