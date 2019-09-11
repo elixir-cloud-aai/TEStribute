@@ -53,10 +53,6 @@ def ip_distance(url1: str, url2: str) -> Dict:
         ).km,
     }
     logger.debug(
-        "Distance calculation between {url1} and {url2}: {ret}".format(
-            url1=url1,
-            url2=url2,
-            ret=ret
-        )
+        f"Distance calculation between {url1} and {url2}: {ret}"
     )
     return ret

@@ -5,6 +5,8 @@ import logging
 import os
 from typing import (List, Dict, Union)
 
+from werkzeug.exceptions import BadRequest
+
 from TEStribute.access_drs import fetch_drs_objects_metadata
 from TEStribute.access_tes import fetch_tes_task_info
 from TEStribute.compute_costs import sum_costs
@@ -22,7 +24,7 @@ logger = setup_logger("TEStribute", log_file, logging.DEBUG)
 
 
 def rank_services(
-    auth_header: Union[None, str] = None,
+    jwt: Union[None, str] = None,
     drs_ids: Union[List, None] = None,
     drs_uris: Union[List, None] = None,
     mode: Union[float, int, Mode, None, str] = None,
@@ -35,11 +37,11 @@ def rank_services(
     time. Default values for all parameters are available in and derived from
     the config file `config/config.yaml`, if not provided.
 
-    :param auth_header: Auth/bearer token to be passed to any TES/DRS calls in
-            order to ascertain whether the user has permissions to access
-            services specified in `drs_ids`, `tes_instances` and
-            `drs_instances`, whether there are particular constraints or
-            special provisions in place that apply to the user (e.g., custom
+    :param jwt: JSON Web Token to be passed to any TES/DRS calls in order to
+            ascertain whether the user has permissions to access service
+            specified in `drs_ids`, `tes_instances` and `drs_instances`, whether
+            there are particular constraints or special provisions in place that
+            apply to the user (e.g., custom
             prices). Currently not implemented.
     :param drs_ids: List of DRS identifiers of input files required for the
             task. Can be derived from `inputs` property of the `tesTask`
@@ -104,20 +106,23 @@ def rank_services(
         level=logging.DEBUG,
         logger=logger,
     )
-    (
-        drs_ids,
-        drs_uris,
-        mode,
-        resource_requirements,
-        tes_uris,
-    ) = validate_input_parameters(
-        defaults=config,
-        drs_ids=drs_ids,
-        drs_uris=drs_uris,
-        mode=mode,
-        resource_requirements=resource_requirements,
-        tes_uris=tes_uris,
-    )
+    try:
+        (
+            drs_ids,
+            drs_uris,
+            mode,
+            resource_requirements,
+            tes_uris,
+        ) = validate_input_parameters(
+            defaults=config,
+            drs_ids=drs_ids,
+            drs_uris=drs_uris,
+            mode=mode,
+            resource_requirements=resource_requirements,
+            tes_uris=tes_uris,
+        )
+    except BadRequest:
+        raise
 
     # Log validated input parameters 
     log_yaml(
@@ -134,11 +139,12 @@ def rank_services(
     # Get metadata for input objects
     if drs_ids is not None:
         if drs_uris is None:
-            logger.critical(
-                "Task cannot be computed: no services for accesing input " \
-                "objects defined."
+            logger.error(
+                "No services for accesing input objects defined."
             )
-            raise ValueError
+            raise BadRequest(
+                "No services for accesing input objects defined."
+            )
         else:
             try:
                 drs_object_info = fetch_drs_objects_metadata(
@@ -146,21 +152,19 @@ def rank_services(
                     drs_ids=drs_ids,
                     timeout=config["timeout"]
                 )
-            except Exception:
-                logger.critical(
-                    "Task cannot be computed: required input object(s) " \
-                    "cannot be accessed."
-                )
+            except BadRequest:
                 raise
     else:
         drs_object_info = dict()
 
     # Get TES task info for resource requirements
     if tes_uris is None:
-        logger.critical(
-            "Task cannot be computed: no execution services defined."
+        logger.error(
+            "No execution services defined."
         )
-        raise ValueError
+        raise BadRequest(
+            "No execution services defined."
+        )
     else:
         try:
             tes_task_info = fetch_tes_task_info(
@@ -168,13 +172,8 @@ def rank_services(
                 resource_requirements=resource_requirements,
                 timeout=config["timeout"]
             )
-        except Exception:
-            logger.critical(
-                (
-                    "Task cannot be computed: task info could not be obtained."
-                )
-            )
-            raise 
+        except BadRequest:
+            raise
 
     # CHECK
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>

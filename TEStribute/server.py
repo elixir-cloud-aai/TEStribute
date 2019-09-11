@@ -6,14 +6,15 @@ import os
 from connexion import App
 
 from TEStribute.config.parse_config import config_parser
-
+from TEStribute.errors import (register_error_handlers)
 
 app = App(__name__)
 
 config = config_parser(
     os.path.abspath(
         os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "config/server_config.yaml"
+            os.path.dirname(os.path.realpath(__file__)),
+            "config/server_config.yaml"
         )
     )
 )
@@ -24,6 +25,9 @@ def configure_app(app):
 
     # Add settings
     app = add_settings(app)
+
+    # Register error handlers
+    app = register_error_handlers(app)
 
     # Add OpenAPIs
     app = add_openapi(app)

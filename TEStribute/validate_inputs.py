@@ -1,7 +1,8 @@
 """Validates and sanitizes input parameters to `rank_services()`"""
-import collections.abc
 import logging
 from typing import (Any, Dict, List, Tuple, Union)
+
+from werkzeug.exceptions import BadRequest
 
 from TEStribute.modes import Mode
 
@@ -79,117 +80,111 @@ def validate_input_parameters(
 
     ## Ascertain availability of required parameters
 
-    # Initialize error flag
-    error = False
-
     # Check DRS identifiers
     # Empty list is set to `None`
     if drs_ids is not None:
-        if isinstance(drs_ids, collections.abc.Iterable):
+        if isinstance(drs_ids, list):
             for item in drs_ids:
                 if not isinstance(item, str):
-                    error = True
                     logger.error(
-                        (
-                            "Parameter 'drs_ids' contains the following item that"
-                            "is not a string: {item}"
-                        ).format(item=item)
+                        f"Parameter 'drs_ids' contains the following item that" \
+                        f"is not a string: {item}"
+                    )
+                    raise BadRequest(
+                        f"Parameter 'drs_ids' contains the following item that" \
+                        f"is not a string: {item}"
                     )
             # Set empty list to None
             if not drs_ids:
                 drs_ids = None
         else:
-            error = True
-            logger.error("Parameter 'drs_ids' is not an iterable object.")
+            logger.error("Parameter 'drs_ids' is not a list object.")
+            raise BadRequest("Parameter 'drs_ids' is not a list object.")
 
     # Check DRS instances
     # Empty list is set to `None`, unless there are DRS identifiers
     if drs_uris is not None:
-        if isinstance(drs_uris, collections.abc.Iterable):
+        if isinstance(drs_uris, list):
             for item in drs_uris:
                 if not isinstance(item, str):
-                    error = True
                     logger.error(
-                        (
-                            "Parameter 'drs_uris' contains the following item "
-                            "that is not a string: {item}"
-                        ).format(item=item)
+                        f"Parameter 'drs_uris' contains the following item " \
+                        f"that is not a string: {item}"
+                    )
+                    raise BadRequest(
+                        f"Parameter 'drs_uris' contains the following item " \
+                        f"that is not a string: {item}"
                     )
             if not drs_uris:
                 # If DRS objects are required, at least one DRS instance has
                 # to be available
                 if drs_ids is not None:
-                    error = True
                     logger.error(
-                        (
-                            "Parameter 'drs_uris' is empty, but parameter "
-                            "'drs_ids' is not empty."
-                        )
+                        "No services for accesing input objects defined."
+                    )
+                    raise BadRequest(
+                        "No services for accesing input objects defined."
                     )
                 # Set empty list to None
                 else:
                     drs_uris = None
         else:
-            error = True
-            logger.error("Parameter 'drs_uris' is not an iterable object.")
+            logger.error("Parameter 'drs_uris' is not a list object.")
+            raise BadRequest("Parameter 'drs_uris' is not a list object.")
     else:
         # If DRS objects are required, at least one DRS instance has
         # to be available
         if drs_ids is not None:
-            error = True
             logger.error(
-                (
-                    "Parameter 'drs_uris' is not defined, but paramter "
-                    "'drs_ids' is not empty."
-                )
+                "No services for accesing input objects defined."
+            )
+            raise BadRequest(
+                "No services for accesing input objects defined."
             )
 
     # Check run mode
     if mode is None:
-        error = True
         logger.error("Parameter 'mode' is invalid.")
-        raise ValueError
+        raise BadRequest("Parameter 'mode' is invalid.")
 
     # Check resource requirements
     if isinstance(resource_requirements, dict):
         resource_requirements = dict(resource_requirements)
         for key in resource_requirements_keys:
             if not key in resource_requirements:
-                error =True
                 logger.error(
-                    (
-                        "Parameter 'resource_requirements' does not contain "
-                        "the following required key: {key}"
-                    ).format(key=key)
+                    f"Parameter 'resource_requirements' does not contain the " \
+                    f"following required key: {key}"
+                )
+                raise BadRequest(
+                    f"Parameter 'resource_requirements' does not contain the " \
+                    f"following required key: {key}"
                 )
     else:
-        error = True
         logger.error("Parameter 'resource_requirements' is not a dictionary.")
-        raise ValueError
+        raise BadRequest(
+            "Parameter 'resource_requirements' is not a dictionary."
+        )
 
     # Check TES instances
     if isinstance(tes_uris, list):
         tes_uris = list(tes_uris)
         for item in tes_uris:
             if not isinstance(item, str):
-                error = True
                 logger.error(
-                    (
-                        "Parameter 'tes_uris' contains the following item that"
-                        "is not a string: {item}"
-                    ).format(item=item)
+                    f"Parameter 'tes_uris' contains the following item that " \
+                    f"is not a string: {item}"
+                )
+                raise BadRequest(
+                    f"Parameter 'tes_uris' contains the following item that " \
+                    f"is not a string: {item}"
                 )
         if not tes_uris:
-            error = True
             logger.error("Parameter 'tes_uris' is empty.")
+            raise BadRequest("Parameter 'tes_uris' is empty.")
     else:
-        error = True
-        logger.error("Parameter 'tes_uris' is not an iterable object.")
-        raise ValueError
-    
-    # Raise ValueError if required parameters are missing/invalid 
-    if error:
-        raise ValueError
+        logger.error("Parameter 'tes_uris' is not a list object.")
+        raise BadRequest("Parameter 'tes_uris' is not an list object.")
     
     # Return sanitizied/validated parameters
     return (
@@ -220,21 +215,15 @@ def set_defaults(
     for name, value in sorted(kwargs.items()):
         if value is not None:
             logger.debug(
-                (
-                    "Object '{name}' is not undefined. No default value set."
-                ).format(name=name)
+                f"Object '{name}' is not undefined. No default value set."
             )
         elif not name in defaults:
             logger.warning(
-                (
-                    "No default value available for object '{name}'."
-                ).format(name=name)
+                f"No default value available for object '{name}'."
             )
         else:
             logger.debug(
-                (
-                    "No value for object '{name}' is defined. Default value set."
-                ).format(name=name)
+                f"No value for object '{name}' is defined. Default value set."
             )
             value = defaults[name]
         return_dict[name] = value
@@ -267,10 +256,8 @@ def sanitize_mode(
             return float(Mode[mode].value)
         except KeyError:
             logger.warning(
-                    (
-                        "Run mode undefined. Invalid mode value passed: {mode}"
-                    ).format(mode=mode)
-                )
+                f"Run mode undefined. Invalid mode value passed: {mode}"
+            )
             return None
 
     # Check if `Mode` value
@@ -279,20 +266,16 @@ def sanitize_mode(
             return float(Mode(mode).value)
         except ValueError:
             logger.warning(
-                    (
-                        "Run mode undefined. Invalid mode value passed: {mode}"
-                    ).format(mode=mode)
-                )
+                f"Run mode undefined. Invalid mode value passed: {mode}"
+            )
             return None
 
     # Check if allowed float
     if isinstance(mode, float):
         if mode < 0 or mode > 1:
             logger.warning(
-                    (
-                        "Run mode undefined. Invalid mode value passed: {mode}"
-                    ).format(mode=mode)
-                )
+                f"Run mode undefined. Invalid mode value passed: {mode}"
+            )
             return None
         else:
             return mode
