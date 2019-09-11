@@ -59,7 +59,7 @@ def fetch_drs_objects_metadata(
                 result_dict[drs_id].update({
                     drs_uri: metadata[drs_id]
                 })
-        
+
         # Check whether any object is unavailable
         if check_results:
 
@@ -80,10 +80,10 @@ def fetch_drs_objects_metadata(
             # Throw error if any object unavailable
             if error:
                 raise FileNotFoundError
-        
+
         # Return results
     return result_dict
-         
+
 
 def _fetch_drs_objects_metadata(
     uri: str,
@@ -158,6 +158,6 @@ def _fetch_drs_objects_metadata(
                 ).format(uri=uri)
             )
             continue
-    
+
     # Return object metadata
     return objects_metadata

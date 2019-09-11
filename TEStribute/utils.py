@@ -55,7 +55,7 @@ def get_valid_service_combinations(task_info: Dict, object_info: Dict) -> Dict:
         for obj_id in drs_info:
             print(list(drs_info[obj_id].keys()))
             drs_dict[obj_id] = choice(list(drs_info[obj_id].keys()))
-        retrun_dict[tes_uri] = drs_dict
+        return_dict[tes_uri] = drs_dict
 
     return return_dict
 

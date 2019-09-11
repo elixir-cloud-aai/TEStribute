@@ -76,8 +76,6 @@ strict-rfc3339==0.7
 swagger-spec-validator==2.4.3
 swagger-ui-bundle==0.0.5
 tes-client==0.1.0
--e git+https://github.com/elixir-europe/TEStribute.git@warning: refname 'HEAD' is ambiguous.
-dec3954c145912709207879942822b656c85f119#egg=TEStribute
 tqdm==4.32.2
 twine==1.13.0
 Twisted==19.7.0

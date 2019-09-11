@@ -1,7 +1,7 @@
 """Validates and sanitizes input parameters to `rank_services()`"""
-from collections.abc import Iterable
+import collections.abc
 import logging
-from typing import Any, Dict, List, Set, Tuple, Union
+from typing import Any, Dict, Iterable, Mapping, Tuple, Union
 
 from TEStribute.modes import Mode
 
@@ -9,13 +9,13 @@ logger = logging.getLogger("TEStribute")
 
 
 def validate_input_parameters(
-    defaults: Union[Dict, None] = None,
-    drs_ids: Union[List, None, Set, Tuple] = None,
-    drs_uris: Union[List, None, Set, Tuple] = None,
+    defaults: Union[Mapping, None] = None,
+    drs_ids: Union[Iterable, None] = None,
+    drs_uris: Union[Iterable, None] = None,
     mode: Union[float, int, Mode, None, str] = None,
-    resource_requirements: Union[Dict, None] = None,
-    tes_uris: Union[List, None, Set, Tuple] = None,
-) -> Tuple:
+    resource_requirements: Union[Mapping, None] = None,
+    tes_uris: Union[Iterable, None] = None,
+) -> Tuple[Union[Iterable, None], Union[Iterable, None], Union[float, None], Union[Mapping, None], Union[Iterable, None]]:
     """
     Sets defaults, validates and sanitizes input parameters to
     `rank_services()` function.
@@ -85,7 +85,7 @@ def validate_input_parameters(
     # Check DRS identifiers
     # Empty list is set to `None`
     if drs_ids is not None:
-        if isinstance(drs_ids, Iterable):
+        if isinstance(drs_ids, collections.abc.Iterable):
             for item in drs_ids:
                 if not isinstance(item, str):
                     error = True
@@ -105,7 +105,7 @@ def validate_input_parameters(
     # Check DRS instances
     # Empty list is set to `None`, unless there are DRS identifiers
     if drs_uris is not None:
-        if isinstance(drs_uris, Iterable):
+        if isinstance(drs_uris, collections.abc.Iterable):
             for item in drs_uris:
                 if not isinstance(item, str):
                     error = True
@@ -165,7 +165,7 @@ def validate_input_parameters(
         logger.error("Parameter 'resource_requirements' is not a dictionary.")
 
     # Check TES instances
-    if isinstance(tes_uris, Iterable):
+    if isinstance(tes_uris, collections.abc.Iterable):
         for item in tes_uris:
             if not isinstance(item, str):
                 error = True
@@ -197,9 +197,9 @@ def validate_input_parameters(
 
 
 def set_defaults(
-    defaults: Dict,
+    defaults: Mapping,
     **kwargs: Any,
-) -> Any:
+) -> Dict:
     """
     Returns `**kwargs` with any undefined values being substituted with values
     from a dictionary of default values.
