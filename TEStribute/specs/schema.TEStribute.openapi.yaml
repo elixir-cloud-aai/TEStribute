@@ -29,7 +29,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/request'
+              $ref: '#/components/schemas/Request'
         required: true
       responses:
         200:
@@ -40,11 +40,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/response'
+                $ref: '#/components/schemas/Response'
+        400:
+          description: The request is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: An unexpected error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       x-openapi-router-controller: controllers.rank_services
 components:
   schemas:
-    accessURIs:
+    AccessURIs:
       required:
       - tes_uri
       type: object
@@ -62,7 +74,7 @@ components:
         input_object_1: https://object-store-1.org/object-1
         input_object_2: https://object-store-2.org/object-2
         input_object_3: https://object-store-3.org/object-3
-    costs:
+    Costs:
       required:
       - amount
       - currency
@@ -85,7 +97,7 @@ components:
       example:
         amount: 1000
         currency: BTC
-    drsIDs:
+    DrsIds:
       type: array
       description: DRS IDs of objects required by the task.
       example:
@@ -95,7 +107,7 @@ components:
       items:
         type: string
       default: []
-    drsURIs:
+    DrsUris:
       type: array
       description: |-
         URIs of known DRS instances that objects may be read from
@@ -108,7 +120,7 @@ components:
         type: string
         format: uri
       default: []
-    duration:
+    Duration:
       required:
       - duration
       - unit
@@ -127,16 +139,58 @@ components:
       example:
         duration: 5
         unit: MINUTES
-    request:
+    Error:
+      required:
+      - message
+      - reason
+      description: An individual error message.
+      type: object
+      properties:
+        reason:
+          type: string
+          description: |-
+            Unique identifier for this error, but *not* the HTTP response code
+            (e.g., name of exception).
+          example: ValueError
+        message:
+          type: string
+          description: |-
+            A human readable message providing more details about the error.
+          example:
+            Required parameter 'tes_uris' is missing.
+    ErrorResponse:
+      required:
+      - code
+      - errors
+      - message
+      description: A response object for detailed error messages.
+      type: object
+      properties:
+        code:
+          type: integer
+          description: HTTP status code (e.g., 400, 404).
+          format: int64
+          example: 400
+        message:
+          type: string
+          description: |-
+            A human readable message providing more details about the error.
+          example: Required parameter `tes_uris` is missing.
+        errors:
+          type: array
+          description: List of associated errors and warnings.
+          items:
+            $ref: '#/components/schemas/Error'
+    Request:
       required:
       - resource_requirements
       - tes_uris
       type: object
       properties:
         drs_ids:
-          $ref: '#/components/schemas/drsIDs'
+          $ref: '#/components/schemas/DrsIds'
         drs_uris:
-          $ref: '#/components/schemas/drsURIs'
+          $ref: '#/components/schemas/DrsUris'
         mode:
           description: |-
             Mode with which service combinations are ranked. Services
@@ -161,16 +215,31 @@ components:
             - random
             - time
         resource_requirements:
-          $ref: '#/components/schemas/resourceRequirements'
+          $ref: '#/components/schemas/ResourceRequirements'
         tes_uris:
-          $ref: '#/components/schemas/tesURIs'
+          $ref: '#/components/schemas/TesUris'
       description: Request schema describing the endpoint's input.
-    response:
-      type: array
+    Response:
+      properties:
+        service_combinations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceCombination'
+        warnings:
+          type: array
+          description: |-
+            Warning messages providing details about potentially serious issues
+            that arose during execution.
+          example:
+          - DRS https://drs-1.service could not be accessed.
+          - DRS https://drs-2.service could not be accessed.
+          - TES https://tes-1.service could not be accessed.
+          items:
+            type: string
+          default:
+          - []
       description: Response schema describing the endpoint's output.
-      items:
-        $ref: '#/components/schemas/serviceCombination'
-    resourceRequirements:
+    ResourceRequirements:
       required:
       - cpu_cores
       - disk_gb
@@ -216,7 +285,7 @@ components:
         zones:
         - zone-1
         - zone-2
-    serviceCombination:
+    ServiceCombination:
       required:
       - access_uris
       - cost_estimate
@@ -225,9 +294,9 @@ components:
       type: object
       properties:
         access_uris:
-          $ref: '#/components/schemas/accessURIs'
+          $ref: '#/components/schemas/AccessURIs'
         cost_estimate:
-          $ref: '#/components/schemas/costs'
+          $ref: '#/components/schemas/Costs'
         rank:
           type: integer
           description: |-
@@ -236,7 +305,7 @@ components:
           format: int64
           example: 1
         time_estimate:
-          $ref: '#/components/schemas/duration'
+          $ref: '#/components/schemas/Duration'
       description: |-
         A combination of TES and input DRS object access URIs
         together with cost/time estimates and a rank.
@@ -253,7 +322,7 @@ components:
           input_object_2: https://object-store-2.org/object-2
           input_object_3: https://object-store-3.org/object-3
         rank: 1
-    tesURIs:
+    TesUris:
       type: array
       description: URIs of known TES instances that the task may be computed on.
       example:
@@ -263,4 +332,3 @@ components:
       items:
         type: string
         format: uri
-
