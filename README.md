@@ -42,7 +42,7 @@ python TEStribute/__init__.py
 
 ## Implementation details
 
-Given lists of available [GA4GH] [Task Execution Service] (TES) and [Data
+Given lists of available [GA4GH][1] [Task Execution Service] (TES) and [Data
 Repository Service] (DRS) instances, the DRS identifiers for all input files,
 and a task's compute resource requirements (e.g., extracted from a `POST /tasks`
 TES request), the software returns a list of combinations of TES and DRS
@@ -61,33 +61,54 @@ to interact with these services.
 The diagram shown below shows how the TEStribute works at the moment.
 ![TEStribute_working]
 
-## Install
+## Installation
 
-### Requirements
+### API service (dockerized)
 
-* [Git] (tested with version 2.17.1)
-* [Python] (tested with versions 2.7.15+ & 3.6.8)
-* [pip] (tested with version 19.1.1)
-* [virtualenv] (tested with version 15.1.0)
+Ensure you have the following software installed:
 
-### Clone repository
+* [Docker](https://www.docker.com/) (18.06.1-ce, build e68fc7a)
+* [docker-compose](https://docs.docker.com/compose/) (1.23.1, build b02f1306)
+* [Git](https://git-scm.com/) (tested with version 2.17.1)
+
+> Note: These are the versions used for development/testing. Other versions
+> may or may not work.
+
+Clone repository and start Docker service
 
 ```bash
-git clone git@github.com:elixir-europe/TEStribute.git
-cd TEStribute
+git clone https://github.com/elixir-europe/proTES.git app
+cd app
+docker-compose up --build --detach
 ```
 
-### Install dependencies
+Visit Swagger UI
 
 ```bash
+firefox http://localhost:7979/ui/
+```
+
+### For CLI usage & imports
+
+Ensure you have the following software installed:
+
+* [Git](https://git-scm.com/) (tested with version 2.17.1)
+* [Python](https://www.python.org) (tested with version 3.6.8)
+* [pip](https://pip.pypa.io/en/stable/) (tested with version 19.2.2)
+* [virtualenv](https://virtualenv.pypa.io/en/latest/)
+  (tested with version 15.1.0)
+
+> Note: These are the versions used for development/testing. Other versions
+> may or may not work.
+
+Clone repository, install app & dependencies
+
+```bash
+git clone git@github.com:elixir-europe/TEStribute.git app
+cd app
 virtualenv -p `which python3` venv
 source venv/bin/activate
 pip install -r requirements.txt
-```
-
-### Install app
-
-```bash
 python setup.py develop
 ```
 
