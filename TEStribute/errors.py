@@ -3,6 +3,7 @@ Custom errors, error handler functions and function to register error handlers
 with a Connexion app instance.
 """
 import logging
+from typing import (Type, Union)
 
 from connexion import App
 from connexion.exceptions import ExtraParameterProblem
@@ -40,14 +41,13 @@ def register_error_handlers(app: App) -> App:
 
 
 # Custom exceptions
-class ValidationError(BaseException):
+class ValidationError(Exception):
     """Error raised for invalid input parameters."""
 
     def __init__(self, description: str, **kwargs):
         super(ValidationError, self).__init__(description, **kwargs)
 
-
-class ResourceUnavailableError(BaseException):
+class ResourceUnavailableError(Exception):
     """Error raised if a required resource is unavailable."""
 
     def __init__(self, description: str, **kwargs):
@@ -55,6 +55,49 @@ class ResourceUnavailableError(BaseException):
 
 
 # Custom error handlers
+def throw(
+    exception: Type[Exception],
+    *args: str,
+    log: bool = True,
+    logger: logging.Logger = logger,
+    level: int = logging.ERROR,
+    tb: bool = False,
+) -> Exception:
+    """
+    """
+    message = " ".join(str(item.rstrip()) for item in args)
+    if log:
+        logger.log(level=level, msg=message, exc_info=tb)
+    raise exception(message)
+
+
+def throwup(
+    exception: Exception,
+    *args: str,
+    cast: Union[None, Type[Exception]] = None,
+    chain: bool = True,
+    log: bool = True,
+    logger: logging.Logger = logging.getLogger(__name__),
+    level: int = logging.ERROR,
+    tb: bool = False,
+) -> Exception:
+    """
+    """
+    message = " ".join(str(item.rstrip()) for item in args)
+    if log:
+        logger.log(level=level, msg=message, exc_info=tb)
+    if cast is None:
+        if chain:
+            raise type(exception)(message) from exception
+        else:
+            raise type(exception)(message)
+    else:
+        if chain:
+            raise cast(message) from exception
+        else:
+            raise cast(message)
+
+
 def handle_bad_request_validation(response: Response) -> Response:
     return Response(
         response=dumps({
@@ -115,3 +158,4 @@ def handle_unauthorized(exception: Unauthorized) -> Response:
         status=int(exception.code),
         mimetype="application/problem+json"
     )
+
