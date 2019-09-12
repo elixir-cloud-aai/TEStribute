@@ -30,7 +30,7 @@ def fetch_drs_objects_metadata(
     :param drs_ids: List (or other iterable object) of globally unique DRS
             identifiers.
     :param check_results: Check whether every object is available at least at
-            one DRS instance. Raises FileNotFoundError if not.
+            one DRS instance.
     :param timeout: Time (in seconds) after which an unsuccessful connection
             attempt to the DRS should be terminated.
 

@@ -9,7 +9,7 @@ from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
 import tes_client
 
-from TEStribute.errors import ResourceUnavailableError
+from TEStribute.errors import (ResourceUnavailableError, throw)
 
 logger = logging.getLogger("TEStribute")
 
@@ -31,8 +31,7 @@ def fetch_tes_task_info(
             speficications in the `mock-TES` repository at:
             https://github.com/elixir-europe/mock-TES/blob/master/mock_tes/specs/schema.task_execution_service.d55bf88.openapi.modified.yaml
     :param check_results: Check whether the resulting dictionary contains data
-            for at least one TES instance. Raises requests.exceptions.HTTPError
-            if not.
+            for at least one TES instance.
     :param timeout: Time (in seconds) after which an unsuccessful connection
             attempt to the DRS should be terminated.
 
@@ -60,10 +59,8 @@ def fetch_tes_task_info(
         
     # Check whether at least one TES instance provided task info
     if check_results and not result_dict:
-        logger.error(
-            "None of the specified TES instances provided any task info."
-        )
-        raise ResourceUnavailableError(
+        throw(
+            ResourceUnavailableError,
             "None of the specified TES instances provided any task info."
         )
     
@@ -94,7 +91,6 @@ def _fetch_tes_task_info(
 
     """
     # Establish connection with TES; handle exceptions
-    # TODO: Implement timeout
     try:
         client = tes_client.Client(uri)
     except TimeoutError:

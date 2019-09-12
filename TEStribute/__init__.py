@@ -11,7 +11,7 @@ from TEStribute.access_tes import fetch_tes_task_info
 from TEStribute.costs import estimate_costs
 from TEStribute.config.parse_config import config_parser
 from TEStribute.distances import estimate_distances
-from TEStribute.errors import ResourceUnavailableError
+from TEStribute.errors import (ResourceUnavailableError, throw)
 from TEStribute.log.logging_functions import log_yaml
 from TEStribute.log import setup_logger
 from TEStribute.models import Mode
@@ -184,41 +184,38 @@ def rank_services(
         object_info=drs_object_info,
     )
 
-    # Rank services by costs and/or time
-    if Mode["cost"].value <= mode <= Mode["time"].value:
-    
-        # Compute distances
-        tes_object_distances = estimate_distances(
-            combinations=valid_service_combos,
+    # Compute distances
+    tes_object_distances = estimate_distances(
+        combinations=valid_service_combos,
+    )
+
+    # Compute cost estimates
+    if Mode["cost"].value <= mode < Mode["time"].value:
+        tes_costs = estimate_costs(
+            task_info=tes_task_info,
+            object_info=drs_object_info,
+            distances=tes_object_distances,
         )
+    else: tes_costs = {}
 
-        # Compute cost estimates
-        if Mode["cost"].value <= mode < Mode["time"].value:
-            tes_costs = estimate_costs(
-                task_info=tes_task_info,
-                object_info=drs_object_info,
-                distances=tes_object_distances,
-            )
-        else: tes_costs = {}
-
-        # Compute time estimates
-        if Mode["cost"].value < mode <= Mode["time"].value:
-            tes_times = estimate_times(
-                task_info=tes_task_info,
-                object_info=drs_object_info,
-                distances=tes_object_distances,
-            )
-        else: tes_times = {}
-
-        # Rank by costs/times
-        ranked_services = rank_order.cost_time(
-            costs=tes_costs,
-            times=tes_times,
-            weight=mode,
+    # Compute time estimates
+    if Mode["cost"].value < mode <= Mode["time"].value:
+        tes_times = estimate_times(
+            task_info=tes_task_info,
+            object_info=drs_object_info,
+            distances=tes_object_distances,
         )
+    else: tes_times = {}
+
+    # Rank by costs/times
+    ranked_services = rank_order.cost_time(
+        costs=tes_costs,
+        times=tes_times,
+        weight=mode,
+    )
 
     # Randomize ranks
-    elif mode == Mode["random"].value:
+    if mode == Mode["random"].value:
         ranked_services = rank_order.randomize(
             uris=tes_uris,
             object_info=drs_object_info,

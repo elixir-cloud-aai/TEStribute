@@ -62,7 +62,7 @@ paths:
       x-openapi-router-controller: controllers.rank_services
 components:
   schemas:
-    AccessURIs:
+    AccessUris:
       required:
       - tes_uri
       type: object
@@ -205,6 +205,7 @@ components:
             representing weights at which services are ranked entirely
             by cost and time, respectively. It is also possible to
             randomize rankings (specify 'random' or -1).
+          default: 0.5
           example: random
           oneOf:
           - maximum: 1
@@ -246,8 +247,7 @@ components:
           - TES https://tes-1.service could not be accessed
           items:
             type: string
-          default:
-          - []
+          default: []
       description: Response schema describing the endpoint's output.
     ResourceRequirements:
       required:
@@ -262,7 +262,7 @@ components:
           description: Requested number of CPUs.
           format: int64
         disk_gb:
-          type: integer
+          type: number
           description: Requested disk size in gigabytes (GB).
           format: double
         execution_time_min:
@@ -286,6 +286,8 @@ components:
           items:
             type: string
           default: []
+      description: |-
+        Resources requested by a task.
       example:
         cpu_cores: 1
         execution_time_min: 60
@@ -304,7 +306,7 @@ components:
       type: object
       properties:
         access_uris:
-          $ref: '#/components/schemas/AccessURIs'
+          $ref: '#/components/schemas/AccessUris'
         cost_estimate:
           $ref: '#/components/schemas/Costs'
         rank:

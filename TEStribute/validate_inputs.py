@@ -2,7 +2,7 @@
 import logging
 from typing import (Any, Dict, List, Tuple, Union)
 
-from TEStribute.errors import ValidationError
+from TEStribute.errors import (throw, ValidationError)
 from TEStribute.models import Mode
 
 logger = logging.getLogger("TEStribute")
@@ -15,7 +15,13 @@ def validate_input_parameters(
     mode: Union[float, int, Mode, None, str] = None,
     resource_requirements: Union[Dict, None] = None,
     tes_uris: Union[List, None] = None,
-) -> Tuple[Union[List, None], Union[List, None], float, Dict, List]:
+) -> Tuple[
+        Union[List, None],
+        Union[List, None],
+        Union[float, None],
+        Union[Dict, None],
+        Union[List, None]
+    ]:
     """
     Sets defaults, validates and sanitizes input parameters to
     `rank_services()` function.
@@ -68,6 +74,7 @@ def validate_input_parameters(
             resource_requirements=resource_requirements,
             tes_uris=tes_uris,
         )
+
         drs_ids = replaced_values["drs_ids"]
         drs_uris = replaced_values["drs_uris"]
         mode = replaced_values["mode"]
@@ -77,113 +84,125 @@ def validate_input_parameters(
     # Sanitize run mode
     mode = sanitize_mode(mode=mode)
 
-    ## Ascertain availability of required parameters
-
     # Check DRS identifiers
     # Empty list is set to `None`
     if drs_ids is not None:
+
         if isinstance(drs_ids, list):
+
             for item in drs_ids:
+
                 if not isinstance(item, str):
-                    logger.error(
-                        f"Parameter 'drs_ids' contains the following item that" \
-                        f"is not a string: {item}"
+                    throw(
+                        ValidationError,
+                        "Parameter 'drs_ids' contains the following item that",
+                        f"is not a string: {item}",
                     )
-                    raise ValidationError(
-                        f"Parameter 'drs_ids' contains the following item that" \
-                        f"is not a string: {item}"
-                    )
+
             # Set empty list to None
             if not drs_ids:
                 drs_ids = None
+
         else:
-            logger.error("Parameter 'drs_ids' is not a list object.")
-            raise ValidationError("Parameter 'drs_ids' is not a list object.")
+            throw(
+                ValidationError,
+                "Parameter 'drs_ids' is not a list object.",
+            )
 
     # Check DRS instances
     # Empty list is set to `None`, unless there are DRS identifiers
     if drs_uris is not None:
+
         if isinstance(drs_uris, list):
+
             for item in drs_uris:
+
                 if not isinstance(item, str):
-                    logger.error(
-                        f"Parameter 'drs_uris' contains the following item " \
-                        f"that is not a string: {item}"
+                    throw(
+                        ValidationError,
+                        "Parameter 'drs_uris' contains the following item that",
+                        f"is not a string: {item}",
                     )
-                    raise ValidationError(
-                        f"Parameter 'drs_uris' contains the following item " \
-                        f"that is not a string: {item}"
-                    )
+
             if not drs_uris:
                 # If DRS objects are required, at least one DRS instance has
                 # to be available
+
                 if drs_ids is not None:
-                    logger.error(
-                        "No services for accesing input objects defined."
-                    )
-                    raise ValidationError(
-                        "No services for accesing input objects defined."
+                    throw(
+                        ValidationError,
+                        "No services for accesing input objects defined.",
                     )
                 # Set empty list to None
+
                 else:
                     drs_uris = None
+
         else:
-            logger.error("Parameter 'drs_uris' is not a list object.")
-            raise ValidationError("Parameter 'drs_uris' is not a list object.")
+            throw(
+                ValidationError,
+                "Parameter 'drs_uris' is not a list object.",
+            )
+
     else:
         # If DRS objects are required, at least one DRS instance has
         # to be available
         if drs_ids is not None:
-            logger.error(
-                "No services for accesing input objects defined."
-            )
-            raise ValidationError(
-                "No services for accesing input objects defined."
+            throw(
+                ValidationError,
+                "No services for accesing input objects defined.",
             )
 
     # Check run mode
     if mode is None:
-        logger.error("Parameter 'mode' is invalid.")
-        raise ValidationError("Parameter 'mode' is invalid.")
+        throw(
+            ValidationError,
+            "Parameter 'mode' is invalid.",
+        )
 
     # Check resource requirements
     if isinstance(resource_requirements, dict):
         resource_requirements = dict(resource_requirements)
+
         for key in resource_requirements_keys:
+
             if not key in resource_requirements:
-                logger.error(
-                    f"Parameter 'resource_requirements' does not contain the " \
-                    f"following required key: {key}"
+                throw(
+                    ValidationError,
+                    "Parameter 'resource_requirements' does not contain the",
+                    f"following required key: {key}",
                 )
-                raise ValidationError(
-                    f"Parameter 'resource_requirements' does not contain the " \
-                    f"following required key: {key}"
-                )
+
     else:
-        logger.error("Parameter 'resource_requirements' is not a dictionary.")
-        raise ValidationError(
-            "Parameter 'resource_requirements' is not a dictionary."
+        throw(
+            ValidationError,
+            "Parameter 'resource_requirements' is not a dictionary.",
         )
 
     # Check TES instances
     if isinstance(tes_uris, list):
         tes_uris = list(tes_uris)
+
         for item in tes_uris:
+
             if not isinstance(item, str):
-                logger.error(
-                    f"Parameter 'tes_uris' contains the following item that " \
-                    f"is not a string: {item}"
+                throw(
+                    ValidationError,
+                    "Parameter 'tes_uris' contains the following item that is",
+                    f"not a string: {item}",
                 )
-                raise ValidationError(
-                    f"Parameter 'tes_uris' contains the following item that " \
-                    f"is not a string: {item}"
-                )
+
         if not tes_uris:
-            logger.error("Parameter 'tes_uris' is empty.")
-            raise ValidationError("Parameter 'tes_uris' is empty.")
+            throw(
+                ValidationError,
+                "Parameter 'tes_uris' is empty.",
+            )
+
     else:
-        logger.error("Parameter 'tes_uris' is not a list object.")
-        raise ValidationError("Parameter 'tes_uris' is not an list object.")
+        throw(
+            ValidationError,
+            "Parameter 'tes_uris' is not a list object.",
+        )
     
     # Return sanitizied/validated parameters
     return (
@@ -210,22 +229,35 @@ def set_defaults(
             `defaults` dictionary will be skipped with a warning.
     :return: Dictionary corresponding to `**kwargs`, with updated values
     """
+    # Initialize result dictionary
     return_dict = {}
+
+    # Iterate over keyword arguments
     for name, value in sorted(kwargs.items()):
+
+        # Check whether value is already set
         if value is not None:
             logger.debug(
                 f"Object '{name}' is not undefined. No default value set."
             )
+
+        # Warn if no default value is available
         elif not name in defaults:
             logger.warning(
                 f"No default value available for object '{name}'."
             )
+
+        # Set default value
         else:
             logger.debug(
                 f"No value for object '{name}' is defined. Default value set."
             )
             value = defaults[name]
+
+        # Add value to return dictionary
         return_dict[name] = value
+
+    # Return updated dictionary
     return return_dict
 
 
@@ -244,11 +276,11 @@ def sanitize_mode(
     :return: Sanitized mode of type `float`. None` is returned if an invalid
             value is passed.
     """
-    # Check if `Mode` instance
+    # Check if mode is `Mode` instance
     if isinstance(mode, Mode):
         return float(mode.value)
 
-    # Check if `Mode` key
+    # Check if mode is `Mode` key
     if isinstance(mode, str):
         try:
             return float(Mode[mode].value)
@@ -258,7 +290,7 @@ def sanitize_mode(
             )
             return None
 
-    # Check if `Mode` value
+    # Check if mode is `Mode` value
     if isinstance(mode, int):
         try:
             return float(Mode(mode).value)
@@ -268,7 +300,7 @@ def sanitize_mode(
             )
             return None
 
-    # Check if allowed float
+    # Check if mode is allowed float
     if isinstance(mode, float):
         if mode < 0 or mode > 1:
             logger.warning(
