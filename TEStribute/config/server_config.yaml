@@ -6,7 +6,7 @@ server:
 
 # Security settings
 security:
-    authorization_required: True
+    authorization_required: False
     jwt:
         auth_header_key: Authorization
         claim_identity: sub
@@ -18,7 +18,7 @@ security:
         idp_config_url_suffix: /.well-known/openid-configuration
         idp_config_userinfo: userinfo_endpoint
         jwt_prefix: Bearer
-        validation_methods:
+        validation_methods:  # available methods: 'userinfo', 'public_key'
           - userinfo
           - public_key
 

@@ -10,6 +10,7 @@ from simplejson.errors import JSONDecodeError
 from typing import (Dict, List, Union)
 
 from jwt import (decode, get_unverified_header, algorithms)
+from werkzeug.exceptions import Unauthorized
 
 
 class JWT:
@@ -132,7 +133,7 @@ class JWT:
                     algorithms=self.decode_algorithms,
                 )
             except Exception as e:
-                raise Exception(
+                raise Unauthorized(
                     f"JWT could not be decoded. Original error message: " \
                     f"{type(e).__name__}: {e}"
                 ) from e
@@ -313,18 +314,13 @@ class JWT:
         """
         
         """
-        if not len(self.validation_methods):
-            raise ValueError(
-                "No validation methods configured."
-            )
         for method in self.validation_methods:
             try:
                 ValidationMethods[method].value(self, force=force)
             except Exception as e:
                 raise ValueError(
-                    f"Validation of JWT '{self.jwt}' by method " \
-                    f"'{method}' failed. Original error message: " \
-                    f"{type(e).__name__}: {e}"
+                    f"Validation of JWT by method '{method}' failed. " \
+                    f"Original error message: {type(e).__name__}: {e}"
                 ) from e
 
 
@@ -422,3 +418,11 @@ class ValidationMethods(Enum):
     """Enumerator class for different JSON Web Token validation methods."""
     userinfo = partial(JWT.get_user_info)
     public_key = partial(JWT.validate_signature)
+
+
+def connexion_bearer_info(token: str) -> Dict:
+    jwt = JWT(jwt=token)
+    jwt.get_claims()
+    ret_dict = jwt.claims
+    ret_dict['scope'] = ''
+    return ret_dict

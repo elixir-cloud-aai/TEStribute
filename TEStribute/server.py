@@ -81,9 +81,11 @@ def add_security_definitions(
     jwt:
       type: http
       scheme: bearer
-      in: header
       bearerFormat: JWT
-      description: "ffsfd"
+      x-bearerInfoFunc: security.process_jwt.connexion_bearer_info
+
+security:
+- jwt: []
 '''
 
     # Create copy for modification

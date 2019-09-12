@@ -5,7 +5,7 @@ with a Connexion app instance.
 import logging
 
 from connexion import App
-from connexion.exceptions import (ExtraParameterProblem)
+from connexion.exceptions import ExtraParameterProblem
 from flask import Response
 from json import dumps
 from werkzeug.exceptions import (BadRequest, InternalServerError, Unauthorized)
@@ -27,7 +27,7 @@ def register_error_handlers(app: App) -> App:
     # cannot be intercepted by `add_error_handler`; see here:
     # https://github.com/zalando/connexion/issues/138
     @app.app.after_request
-    def _rewrite_bad_request(response):
+    def _rewrite_bad_request(response: Response) -> Response:
         if (
             response.status_code == 400 and
             response.data.decode('utf-8').find('"title":') is not None and
@@ -35,7 +35,7 @@ def register_error_handlers(app: App) -> App:
         ):
             response = handle_bad_request_validation(response)
         return response
-    
+
     return app
 
 

@@ -7,9 +7,9 @@ from TEStribute.decorators import auth_token_optional
 from TEStribute.errors import (ResourceUnavailableError, ValidationError)
 
 @auth_token_optional
-def RankServices(body):
+def RankServices(body, *args, **kwargs):
 
-    ranked_response = __post_rank_services(body)
+    ranked_response = __post_rank_services(params=body)
 
     # TODO:
     #   handle FileNotFoundError
