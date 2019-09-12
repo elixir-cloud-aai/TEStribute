@@ -73,6 +73,8 @@ def sum_costs(total_tes_costs: Dict, data_transfer_rate: Dict, drs_objects_locat
 
     return_info = defaultdict(dict)
     sum_drs = 0
+    currency = None
+    total_cost = None
     for drs_id, drs_info in drs_info.items():
         for drs_uri, object_info in drs_info.items():
             # only the one with the lowest cost is kept
@@ -88,10 +90,22 @@ def sum_costs(total_tes_costs: Dict, data_transfer_rate: Dict, drs_objects_locat
         sum_drs = return_info[drs_id][1]["cost"] + sum_drs
         currency = return_info[drs_id][1]["currency"]
 
-    if currency == total_tes_costs["currency"]:
-        total_cost = total_tes_costs["amount"] + sum_drs
+        if currency == total_tes_costs["currency"]:
+            total_cost = total_tes_costs["amount"] + sum_drs
+        else:
+            raise ValueError
 
-    # to fix overwriting of elemets in the loop it is called from
-    # return_info = dict(return_info)
-    return_info.update({"drs_costs": {"amount": sum_drs, "currency": currency},"total_costs": total_cost})
-    return return_info
+    if currency is not None and total_cost is not None:
+
+        # to fix overwriting of elemets in the loop it is called from
+        # return_info = dict(return_info)
+        return_info.update({
+            "drs_costs": {"amount": sum_drs, "currency": currency},
+            "total_costs": total_cost,
+            "currency": currency
+        })
+
+        return return_info
+
+    else:
+        raise ValueError

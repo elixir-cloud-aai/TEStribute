@@ -3,19 +3,21 @@ Functions that interact with the DRS service
 """
 from collections import defaultdict
 import logging
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List, Union
 
 from bravado.exception import HTTPNotFound
 import drs_client
 from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
 
+from TEStribute.errors import (throw, ResourceUnavailableError)
+
 logger = logging.getLogger("TEStribute")
 
 
 def fetch_drs_objects_metadata(
-    drs_uris: Union[List, Set, Tuple],
-    drs_ids: Union[List, Set, Tuple],
+    drs_uris: List[str],
+    drs_ids: List[str],
     check_results: bool = True,
     timeout: float = 3,
 ) -> Dict:
@@ -59,35 +61,26 @@ def fetch_drs_objects_metadata(
                 result_dict[drs_id].update({
                     drs_uri: metadata[drs_id]
                 })
-        
+
         # Check whether any object is unavailable
         if check_results:
-
-            # Initialize flag
-            error = False
 
             # Check availability of objects
             for drs_id in drs_ids:
                 if drs_id not in result_dict:
-                    logger.error(
-                        (
-                            "Object '{drs_id}' is not available at any of the "
-                            "specified DRS instances."
-                        ).format(drs_id=drs_id)
+                    throw(
+                        ResourceUnavailableError,
+                        f"Object '{drs_id}' is not available at any of the ",
+                        f"specified DRS instances.",
                     )
-                    error = True
 
-            # Throw error if any object unavailable
-            if error:
-                raise FileNotFoundError
-        
         # Return results
-        return result_dict
-         
+    return result_dict
+
 
 def _fetch_drs_objects_metadata(
     uri: str,
-    ids: Union[List, Set, Tuple],
+    ids: List[str],
     timeout: float = 3,
 ) -> Dict:
     """
@@ -114,9 +107,7 @@ def _fetch_drs_objects_metadata(
         client = drs_client.Client(uri)
     except TimeoutError:
         logger.warning(
-            (
-                "DRS unavailable: connection attempt to DRS '{uri}' timed out."
-            ).format(uri=uri)
+            f"DRS unavailable: connection attempt to DRS '{uri}' timed out."
         )
         return {}
     except (
@@ -127,10 +118,8 @@ def _fetch_drs_objects_metadata(
         MissingSchema,
     ):
         logger.warning(
-            (
-                "DRS unavailable: the provided URI '{uri}' could not be "
-                "resolved."
-            ).format(uri=uri)
+            f"DRS unavailable: the provided URI '{uri}' could not be " \
+            f"resolved."
         )
         return {}
 
@@ -144,20 +133,15 @@ def _fetch_drs_objects_metadata(
             )._as_dict()
         except HTTPNotFound:
             logger.debug(
-                "File '{drs_id}' is not available on DRS '{uri}'.".format(
-                    drs_id=drs_id,
-                    uri=uri
-                )
+                f"File '{drs_id}' is not available on DRS '{uri}'."
             )
             continue
         except TimeoutError:
             logger.warning(
-                (
-                    "DRS unavailable: connection attempt to DRS '{uri}' timed "
-                    "out."
-                ).format(uri=uri)
+                f"DRS unavailable: connection attempt to DRS '{uri}' timed " \
+                f"out."
             )
-            return {}
-    
+            continue
+
     # Return object metadata
     return objects_metadata

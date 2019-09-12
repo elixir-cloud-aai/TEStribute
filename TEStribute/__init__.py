@@ -3,7 +3,7 @@ Exposes TEStribute main function rank_services()
 """
 import logging
 import os
-from typing import Dict, List, Union
+from typing import (List, Dict, Union)
 
 from TEStribute import rank_order
 from TEStribute.access_drs import fetch_drs_objects_metadata
@@ -11,6 +11,7 @@ from TEStribute.access_tes import fetch_tes_task_info
 from TEStribute.costs import estimate_costs
 from TEStribute.config.parse_config import config_parser
 from TEStribute.distances import estimate_distances
+from TEStribute.errors import ResourceUnavailableError
 from TEStribute.log.logging_functions import log_yaml
 from TEStribute.log import setup_logger
 from TEStribute.models import Mode
@@ -26,24 +27,24 @@ logger = setup_logger("TEStribute", log_file, logging.DEBUG)
 
 
 def rank_services(
-    auth_header: Union[None, str] = None,
+    jwt: Union[None, str] = None,
     drs_ids: Union[List, None] = None,
     drs_uris: Union[List, None] = None,
     mode: Union[float, int, Mode, None, str] = None,
     resource_requirements: Union[Dict, None] = None,
     tes_uris: Union[List, None] = None,
-) -> List:
+) -> Dict[str, List]:
     """
     Main function that returns a rank-ordered list of GA4GH TES and DRS
     services to use when submitting a TES task to decrease total costs and or
     time. Default values for all parameters are available in and derived from
     the config file `config/config.yaml`, if not provided.
 
-    :param auth_header: Auth/bearer token to be passed to any TES/DRS calls in
-            order to ascertain whether the user has permissions to access
-            services specified in `drs_ids`, `tes_instances` and
-            `drs_instances`, whether there are particular constraints or
-            special provisions in place that apply to the user (e.g., custom
+    :param jwt: JSON Web Token to be passed to any TES/DRS calls in order to
+            ascertain whether the user has permissions to access service
+            specified in `drs_ids`, `tes_instances` and `drs_instances`, whether
+            there are particular constraints or special provisions in place that
+            apply to the user (e.g., custom
             prices). Currently not implemented.
     :param drs_ids: List of DRS identifiers of input files required for the
             task. Can be derived from `inputs` property of the `tesTask`
@@ -108,20 +109,23 @@ def rank_services(
         level=logging.DEBUG,
         logger=logger,
     )
-    (
-        drs_ids,
-        drs_uris,
-        mode,
-        resource_requirements,
-        tes_uris,
-    ) = validate_input_parameters(
-        defaults=config,
-        drs_ids=drs_ids,
-        drs_uris=drs_uris,
-        mode=mode,
-        resource_requirements=resource_requirements,
-        tes_uris=tes_uris,
-    )
+    try:
+        (
+            drs_ids,
+            drs_uris,
+            mode,
+            resource_requirements,
+            tes_uris,
+        ) = validate_input_parameters(
+            defaults=config,
+            drs_ids=drs_ids,
+            drs_uris=drs_uris,
+            mode=mode,
+            resource_requirements=resource_requirements,
+            tes_uris=tes_uris,
+        )
+    except ResourceUnavailableError:
+        raise
 
     # Log validated input parameters 
     log_yaml(
@@ -137,36 +141,43 @@ def rank_services(
     
     # Get metadata for input objects
     if drs_ids is not None:
-        try:
-            drs_object_info = fetch_drs_objects_metadata(
-                drs_uris=drs_uris,
-                drs_ids=drs_ids,
-                timeout=config["timeout"]
+        if drs_uris is None:
+            logger.error(
+                "No services for accesing input objects defined."
             )
-        except Exception:
-            logger.critical(
-                (
-                    "Task cannot be computed: required input file(s) cannot be "
-                    "accessed."
+            raise ResourceUnavailableError(
+                "No services for accesing input objects defined."
+            )
+        else:
+            try:
+                drs_object_info = fetch_drs_objects_metadata(
+                    drs_uris=drs_uris,
+                    drs_ids=drs_ids,
+                    timeout=config["timeout"]
                 )
-            )
-            raise
+            except ResourceUnavailableError:
+                raise
+    else:
+        drs_object_info = dict()
 
     # Get TES task info for resource requirements
-    try:
-        tes_task_info = fetch_tes_task_info(
-            tes_uris=tes_uris,
-            resource_requirements=resource_requirements,
-            timeout=config["timeout"]
+    if tes_uris is None:
+        logger.error(
+            "No execution services defined."
         )
-    except Exception:
-        logger.critical(
-            (
-                "Task cannot be computed: task info could not be obtained."
+        raise ResourceUnavailableError(
+            "No execution services defined."
+        )
+    else:
+        try:
+            tes_task_info = fetch_tes_task_info(
+                tes_uris=tes_uris,
+                resource_requirements=resource_requirements,
+                timeout=config["timeout"]
             )
-        )
-        raise
-    
+        except ResourceUnavailableError:
+            raise
+
     # Get valid TES-DRS combinations
     valid_service_combos = get_valid_service_combinations(
         task_info=tes_task_info,
@@ -248,20 +259,29 @@ def rank_services(
 
     ranked_services = sorted(ranked_services.items(), key=lambda item: item[1])
 
-    # construct final dict
-    return_dict_full = {}
+    # construct final return object
+    return_array_full = []
     rank = 1
     for i in ranked_services:
         return_dict = {}
-        return_dict["TES"] = i[0]
+
+        return_dict["access_uris"] = {}
+        return_dict["access_uris"]["tes_uri"] = i[0]
         for drs_id in drs_object_info.keys():
-            return_dict[drs_id] = tes_costs[i[0]][drs_id][0]
-            return_dict["drs_costs"] = tes_costs[i[0]]["drs_costs"]
-            return_dict["total_costs"] = tes_costs[i[0]]["total_costs"]
-            return_dict["tes_time"] = tes_task_info[i[0]]["queue_time"]
-        return_dict_full.update({rank: return_dict})
+            return_dict["access_uris"][drs_id] = tes_info_drs[i[0]][drs_id][0]
+        return_dict["cost_estimate"] = {
+            "amount": tes_info_drs[i[0]]["total_costs"],
+            "currency": tes_info_drs[i[0]]["currency"]
+        }
+        return_dict["time_estimate"] = tes_task_info[i[0]]["queue_time"]
+        return_dict["rank"] = rank
+        return_array_full.extend([return_dict])
         rank += 1
-    return return_dict_full
+
+    # Add warnings
+    response = {"warnings": [], "service_combinations": return_array_full}
+
+    return response
     #<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 

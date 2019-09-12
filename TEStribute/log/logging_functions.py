@@ -2,7 +2,7 @@
 Convenience functions for logging.
 """
 import logging
-from logging import Logger
+from logging import (getLogger, Logger)
 from typing import Any, Dict, List, Union, Set, Tuple
 
 import yaml
@@ -13,7 +13,7 @@ logger = logging.getLogger("TEStribute")
 def log_yaml(
     header: Union[None, str] = None,
     level: int = logging.DEBUG,
-    logger: Logger = logging,
+    logger: Logger = getLogger(__name__),
     **kwargs: Any,
 ) -> None:
     """
