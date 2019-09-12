@@ -8,7 +8,7 @@ from connexion import App
 from connexion.exceptions import ExtraParameterProblem
 from flask import Response
 from json import dumps
-from werkzeug.exceptions import (BadRequest, InternalServerError)
+from werkzeug.exceptions import (BadRequest, InternalServerError, Unauthorized)
 
 logger = logging.getLogger("TEStribute")
 
@@ -19,6 +19,7 @@ def register_error_handlers(app: App) -> App:
     app.add_error_handler(BadRequest, handle_bad_request)
     app.add_error_handler(ExtraParameterProblem, handle_bad_request)
     app.add_error_handler(InternalServerError, handle_internal_server_error)
+    app.add_error_handler(Unauthorized, handle_unauthorized)
     logger.info('Registered custom error handlers with Connexion app.')
 
     # Workaround for adding a custom handler for `connexion.problem` responses
@@ -26,7 +27,7 @@ def register_error_handlers(app: App) -> App:
     # cannot be intercepted by `add_error_handler`; see here:
     # https://github.com/zalando/connexion/issues/138
     @app.app.after_request
-    def _rewrite_bad_request(response):
+    def _rewrite_bad_request(response: Response) -> Response:
         if (
             response.status_code == 400 and
             response.data.decode('utf-8').find('"title":') is not None and
@@ -34,7 +35,7 @@ def register_error_handlers(app: App) -> App:
         ):
             response = handle_bad_request_validation(response)
         return response
-    
+
     return app
 
 
@@ -83,7 +84,7 @@ def handle_bad_request(exception: BadRequest) -> Response:
             }],
             'message': "The request could not be processed.",
         }),
-        status=400,
+        status=int(exception.code),
         mimetype="application/problem+json",
     )
 
@@ -97,4 +98,20 @@ def handle_internal_server_error(exception: Exception) -> Response:
             }),
         status=500,
         mimetype="application/problem+json",
+    )
+
+def handle_unauthorized(exception: Unauthorized) -> Response:
+    return Response(
+        response=dumps({
+            'code': int(exception.code),
+            'errors': [{
+                'reason': str(exception.__class__).split("'")[1],
+                'message': [
+                    exception.description,
+                ],
+            }],
+            'message': "The request is unauthorized.",
+        }),
+        status=int(exception.code),
+        mimetype="application/problem+json"
     )
