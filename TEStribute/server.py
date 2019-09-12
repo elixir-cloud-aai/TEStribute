@@ -62,12 +62,6 @@ def add_openapi(app: App) -> App:
     return app
 
 
-def main(app: App) -> None:
-    """Initialize, configure and run server"""
-    app = configure_app(app)
-    app.run()
-
-
 def add_security_definitions(
     in_file: str,
     ext: str = 'security_definitions_added.yaml'
@@ -97,6 +91,12 @@ security:
         mod.write(amend)
 
     return out_file
+
+
+def main(app: App) -> None:
+    """Initialize, configure and run server"""
+    app = configure_app(app)
+    app.run()
 
 
 if __name__ == "__main__":
