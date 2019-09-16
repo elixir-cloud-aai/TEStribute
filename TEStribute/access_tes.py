@@ -2,7 +2,7 @@
 Functions that interact with the TES service
 """
 import logging
-from typing import Dict, List
+from typing import Dict, Iterable, Mapping
 
 from bravado.exception import HTTPNotFound
 from requests.exceptions import ConnectionError, HTTPError, MissingSchema
@@ -10,13 +10,14 @@ from simplejson.errors import JSONDecodeError
 import tes_client
 
 from TEStribute.errors import (ResourceUnavailableError, throw)
+from TEStribute.models import (ResourceRequirements, TesUris)
 
 logger = logging.getLogger("TEStribute")
 
 
 def fetch_tes_task_info(
-    tes_uris: List[str],
-    resource_requirements: Dict,
+    tes_uris: TesUris,
+    resource_requirements: ResourceRequirements,
     check_results: bool = True,
     timeout: float = 3,
 ) -> Dict:
@@ -44,7 +45,7 @@ def fetch_tes_task_info(
     result_dict = {}
 
     # Iterate over TES instances
-    for uri in tes_uris:
+    for uri in tes_uris.items:
 
         # Fetch task info at current TES instance
         task_info = _fetch_tes_task_info(
@@ -70,7 +71,7 @@ def fetch_tes_task_info(
 
 def _fetch_tes_task_info(
     uri: str,
-    resource_requirements: Dict,
+    resource_requirements: ResourceRequirements,
     timeout: float = 3,
 ) -> Dict:
     """

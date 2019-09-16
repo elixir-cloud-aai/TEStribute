@@ -11,13 +11,14 @@ from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
 
 from TEStribute.errors import (throw, ResourceUnavailableError)
+from TEStribute.models import (DrsIds, DrsUris)
 
 logger = logging.getLogger("TEStribute")
 
 
 def fetch_drs_objects_metadata(
-    drs_uris: List[str],
-    drs_ids: List[str],
+    drs_uris: DrsUris,
+    drs_ids: DrsIds,
     check_results: bool = True,
     timeout: float = 3,
 ) -> Dict:
@@ -46,12 +47,12 @@ def fetch_drs_objects_metadata(
     result_dict = defaultdict(dict)
 
     # Iterate over DRS instances
-    for drs_uri in drs_uris:
+    for drs_uri in drs_uris.items:
 
         # Fetch object metadata at current DRS instance
         metadata = _fetch_drs_objects_metadata(
             uri=drs_uri,
-            ids=drs_ids,
+            *drs_ids.items,
             timeout=timeout,
         )
 
@@ -66,7 +67,7 @@ def fetch_drs_objects_metadata(
         if check_results:
 
             # Check availability of objects
-            for drs_id in drs_ids:
+            for drs_id in drs_ids.items:
                 if drs_id not in result_dict:
                     throw(
                         ResourceUnavailableError,
@@ -80,7 +81,7 @@ def fetch_drs_objects_metadata(
 
 def _fetch_drs_objects_metadata(
     uri: str,
-    ids: List[str],
+    *ids: str,
     timeout: float = 3,
 ) -> Dict:
     """

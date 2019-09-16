@@ -2,7 +2,7 @@
 Object models for representing nested, dependent data structures.
 """
 import enum
-from typing import Iterable
+from typing import (Iterable, Optional, Mapping, Union)
 
 
 # TODO: Implement classes that represent the following data structures:
@@ -43,15 +43,6 @@ class Currency(enum.Enum):
     USD = "US Dollar"
 
 
-class TimeUnit(enum.Enum):
-    """
-    Enumerator class for units of time.
-    """
-    SECONDS = "seconds"
-    MINUTES = "minutes"
-    HOURS = "hours"
-
-
 class Mode(enum.Enum):
     """
     Enumerator class for different TEStribute run modes.
@@ -59,6 +50,15 @@ class Mode(enum.Enum):
     random = -1
     cost = 0
     time = 1
+
+
+class TimeUnit(enum.Enum):
+    """
+    Enumerator class for units of time.
+    """
+    SECONDS = "seconds"
+    MINUTES = "minutes"
+    HOURS = "hours"
 
 
 class AccessUris:
@@ -264,13 +264,19 @@ class Request:
         tes_uris: TesUris,
         drs_ids: DrsIds = DrsIds(),
         drs_uris: DrsUris = DrsUris(),
-        mode: Mode = Mode(0.5),
+        mode: Optional[Union[float, int, Mode, str]] = Mode(0.5),
     ) -> None:
         self.resource_requirements = resource_requirements
         self.tes_uris = tes_uris
         self.drs_ids = drs_ids
         self.drs_uris = drs_uris
         self.mode = mode
+    
+    def validate(
+        self,
+        defaults: Mapping,
+    ) -> None:
+        pass
 
 
 class ServiceCombination:

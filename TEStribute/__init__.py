@@ -3,18 +3,18 @@ Exposes TEStribute main function rank_services()
 """
 import logging
 import os
-from typing import (List, Dict, Union)
+from typing import (Dict, Iterable, List, Mapping, Optional, Union)
 
+from TEStribute import models
 from TEStribute import rank_order
 from TEStribute.access_drs import fetch_drs_objects_metadata
 from TEStribute.access_tes import fetch_tes_task_info
 from TEStribute.costs import estimate_costs
 from TEStribute.config.parse_config import config_parser
 from TEStribute.distances import estimate_distances
-from TEStribute.errors import (ResourceUnavailableError, throw)
+from TEStribute.errors import (ResourceUnavailableError, throw, ValidationError)
 from TEStribute.log.logging_functions import log_yaml
 from TEStribute.log import setup_logger
-from TEStribute.models import Mode
 from TEStribute.times import estimate_times
 from TEStribute.utils import get_valid_service_combinations
 from TEStribute.validate_inputs import validate_input_parameters
@@ -27,12 +27,12 @@ logger = setup_logger("TEStribute", log_file, logging.DEBUG)
 
 
 def rank_services(
-    jwt: Union[None, str] = None,
-    drs_ids: Union[List, None] = None,
-    drs_uris: Union[List, None] = None,
-    mode: Union[float, int, Mode, None, str] = None,
-    resource_requirements: Union[Dict, None] = None,
-    tes_uris: Union[List, None] = None,
+    jwt: Optional[str] = None,
+    drs_ids: Iterable = [],
+    drs_uris: Iterable = [],
+    mode: Optional[Union[float, int, models.Mode, str]] = models.Mode.random,
+    resource_requirements: Mapping = {},
+    tes_uris: Iterable = [],
 ) -> Dict[str, List]:
     """
     Main function that returns a rank-ordered list of GA4GH TES and DRS
@@ -78,16 +78,29 @@ def rank_services(
                 }
             where [drs_id] entries are taken from parameter `drs_ids`.
     """
+
+    # Create Request object
+    request = models.Request(
+        drs_ids=models.DrsIds(drs_ids),
+        drs_uris=models.DrsUris(drs_uris),
+        mode=mode,        
+        resource_requirements=models.ResourceRequirements(
+            **resource_requirements
+        ),
+        tes_uris=models.TesUris(tes_uris),
+    )
+
     # Log user input
+    # TODO: Implement iterator in class `request` and pass **request
     log_yaml(
         header="=== USER INPUT ===",
         level=logging.DEBUG,
         logger=logger,
-        drs_ids=drs_ids,
-        drs_uris=drs_uris,
-        mode=mode,
-        resource_requirements=resource_requirements,
-        tes_uris=tes_uris,
+        drs_ids=request.drs_ids,
+        drs_uris=request.drs_uris,
+        mode=request.mode,
+        resource_requirements=request.resource_requirements,
+        tes_uris=request.tes_uris,
     )
 
     # Parse config file
@@ -104,44 +117,35 @@ def rank_services(
     )
 
     # Set default values for missing input parameters, validate & sanitize
+    # TODO: Implement method `request.validate()`
     log_yaml(
         header="=== VALIDATION ===",
         level=logging.DEBUG,
         logger=logger,
     )
     try:
-        (
-            drs_ids,
-            drs_uris,
-            mode,
-            resource_requirements,
-            tes_uris,
-        ) = validate_input_parameters(
-            defaults=config,
-            drs_ids=drs_ids,
-            drs_uris=drs_uris,
-            mode=mode,
-            resource_requirements=resource_requirements,
-            tes_uris=tes_uris,
-        )
-    except ResourceUnavailableError:
+        request.validate(defaults=config)
+    except ValidationError:
         raise
 
     # Log validated input parameters 
+    # TODO: Implement iterator in class `request` and pass **request
     log_yaml(
         header="=== VALIDATED INPUT PARAMETERS ===",
         level=logging.INFO,
         logger=logger,
-        drs_ids=drs_ids,
-        drs_uris=drs_uris,
-        mode=mode,
-        resource_requirements=resource_requirements,
-        tes_uris=tes_uris,
+        drs_ids=request.drs_ids,
+        drs_uris=request.drs_uris,
+        mode=request.mode,
+        resource_requirements=request.resource_requirements,
+        tes_uris=request.tes_uris,
     )
     
     # Get metadata for input objects
-    if drs_ids is not None:
-        if drs_uris is None:
+    # TODO: Use model/class for return object
+    drs_object_info = dict()
+    if drs_ids:
+        if not drs_uris:
             logger.error(
                 "No services for accesing input objects defined."
             )
@@ -151,16 +155,16 @@ def rank_services(
         else:
             try:
                 drs_object_info = fetch_drs_objects_metadata(
-                    drs_uris=drs_uris,
-                    drs_ids=drs_ids,
+                    drs_uris=request.drs_uris,
+                    drs_ids=request.drs_ids,
                     timeout=config["timeout"]
                 )
             except ResourceUnavailableError:
                 raise
-    else:
-        drs_object_info = dict()
 
     # Get TES task info for resource requirements
+    # TODO: Use model/class for return object
+    tes_task_info = dict()
     if tes_uris is None:
         logger.error(
             "No execution services defined."
@@ -171,26 +175,29 @@ def rank_services(
     else:
         try:
             tes_task_info = fetch_tes_task_info(
-                tes_uris=tes_uris,
-                resource_requirements=resource_requirements,
+                tes_uris=request.tes_uris,
+                resource_requirements=request.resource_requirements,
                 timeout=config["timeout"]
             )
         except ResourceUnavailableError:
             raise
 
     # Get valid TES-DRS combinations
+    # TODO: Use model/class for return object
     valid_service_combos = get_valid_service_combinations(
         task_info=tes_task_info,
         object_info=drs_object_info,
     )
 
     # Compute distances
+    # TODO: Should be method of class ServiceCombinations
     tes_object_distances = estimate_distances(
         combinations=valid_service_combos,
     )
 
     # Compute cost estimates
-    if Mode["cost"].value <= mode < Mode["time"].value:
+    # TODO: Should be method of class ServiceCombinations
+    if models.Mode["cost"].value <= request.mode < models.Mode["time"].value:
         tes_costs = estimate_costs(
             task_info=tes_task_info,
             object_info=drs_object_info,
@@ -199,7 +206,8 @@ def rank_services(
     else: tes_costs = {}
 
     # Compute time estimates
-    if Mode["cost"].value < mode <= Mode["time"].value:
+    # TODO: Should be method of class ServiceCombinations
+    if models.Mode["cost"].value < request.mode <= models.Mode["time"].value:
         tes_times = estimate_times(
             task_info=tes_task_info,
             object_info=drs_object_info,
@@ -208,6 +216,7 @@ def rank_services(
     else: tes_times = {}
 
     # Rank by costs/times
+    # TODO: Should be method of class ServiceCombinations
     ranked_services = rank_order.cost_time(
         costs=tes_costs,
         times=tes_times,
@@ -215,7 +224,8 @@ def rank_services(
     )
 
     # Randomize ranks
-    if mode == Mode["random"].value:
+    # TODO: Should be method of class ServiceCombinations
+    if mode == models.Mode["random"].value:
         ranked_services = rank_order.randomize(
             uris=tes_uris,
             object_info=drs_object_info,
