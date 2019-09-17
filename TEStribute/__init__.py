@@ -17,7 +17,6 @@ from TEStribute.log.logging_functions import log_yaml
 from TEStribute.log import setup_logger
 from TEStribute.times import estimate_times
 from TEStribute.utils import get_valid_service_combinations
-from TEStribute.validate_inputs import validate_input_parameters
 
 # Set up logging
 log_file = os.path.abspath(
@@ -78,8 +77,12 @@ def rank_services(
                 }
             where [drs_id] entries are taken from parameter `drs_ids`.
     """
-
     # Create Request object
+    log_yaml(
+        header="=== USER INPUT ===",
+        level=logging.DEBUG,
+        logger=logger,
+    )
     request = models.Request(
         drs_ids=models.DrsIds(drs_ids),
         drs_uris=models.DrsUris(drs_uris),
@@ -89,18 +92,10 @@ def rank_services(
         ),
         tes_uris=models.TesUris(tes_uris),
     )
-
-    # Log user input
-    # TODO: Implement iterator in class `request` and pass **request
     log_yaml(
-        header="=== USER INPUT ===",
         level=logging.DEBUG,
         logger=logger,
-        drs_ids=request.drs_ids,
-        drs_uris=request.drs_uris,
-        mode=request.mode,
-        resource_requirements=request.resource_requirements,
-        tes_uris=request.tes_uris,
+        **request.to_dict(),
     )
 
     # Parse config file
@@ -116,10 +111,9 @@ def rank_services(
         config=config,
     )
 
-    # Set default values for missing input parameters, validate & sanitize
-    # TODO: Implement method `request.validate()`
+    # Set defaults & validate input parameters
     log_yaml(
-        header="=== VALIDATION ===",
+        header="=== VALIDATED INPUT PARAMETERS ===",
         level=logging.DEBUG,
         logger=logger,
     )
@@ -127,52 +121,33 @@ def rank_services(
         request.validate(defaults=config)
     except ValidationError:
         raise
-
-    # Log validated input parameters 
-    # TODO: Implement iterator in class `request` and pass **request
     log_yaml(
-        header="=== VALIDATED INPUT PARAMETERS ===",
         level=logging.INFO,
         logger=logger,
-        drs_ids=request.drs_ids,
-        drs_uris=request.drs_uris,
-        mode=request.mode,
-        resource_requirements=request.resource_requirements,
-        tes_uris=request.tes_uris,
+        **request.to_dict(),
     )
     
     # Get metadata for input objects
     # TODO: Use model/class for return object
     drs_object_info = dict()
-    if drs_ids:
-        if not drs_uris:
-            logger.error(
-                "No services for accesing input objects defined."
+    if request.drs_ids is not None and \
+       request.drs_uris is not None:  # Already verified, added for type
+                                      # checking complaint
+        try:
+            drs_object_info = fetch_drs_objects_metadata(
+                drs_uris=request.drs_uris,
+                drs_ids=request.drs_ids,
+                timeout=config["timeout"]
             )
-            raise ResourceUnavailableError(
-                "No services for accesing input objects defined."
-            )
-        else:
-            try:
-                drs_object_info = fetch_drs_objects_metadata(
-                    drs_uris=request.drs_uris,
-                    drs_ids=request.drs_ids,
-                    timeout=config["timeout"]
-                )
-            except ResourceUnavailableError:
-                raise
+        except ResourceUnavailableError:
+            raise
 
     # Get TES task info for resource requirements
     # TODO: Use model/class for return object
     tes_task_info = dict()
-    if tes_uris is None:
-        logger.error(
-            "No execution services defined."
-        )
-        raise ResourceUnavailableError(
-            "No execution services defined."
-        )
-    else:
+    if request.tes_uris is not None and \
+       request.resource_requirements is not None:  # Already verified, added for
+                                                   # type checking complaint
         try:
             tes_task_info = fetch_tes_task_info(
                 tes_uris=request.tes_uris,

@@ -3,9 +3,9 @@ Object models for representing nested, dependent data structures.
 """
 import enum
 import logging
-from typing import (Any, Iterable, Mapping, Optional, Union)
+from typing import (Any, Dict, Iterable, Mapping, Optional, Union)
 
-from TEStribute.errors import (throw, ValidationError)
+from TEStribute.errors import (ValidationError)
 
 logger = logging.getLogger("TEStribute")
 
@@ -293,6 +293,17 @@ class Request:
         self.drs_ids = drs_ids
         self.drs_uris = drs_uris
         self.mode = mode
+    
+
+    def to_dict(self) -> Dict:
+        """Return instance attributes as dictionary."""
+        return {
+            "resource_requirements": self.resource_requirements,
+            "tes_uris": self.tes_uris,
+            "drs_ids": self.drs_ids,
+            "drs_uris": self.drs_uris,
+            "mode": self.mode,
+        }
 
 
     def validate(
@@ -306,45 +317,34 @@ class Request:
         """
         # Set defaults if values are missing
         if defaults is not None:
-            self.set_defaults(
-                defaults=defaults,
-                drs_ids=self.drs_ids,
-                drs_uris=self.drs_uris,
-                mode=self.mode,
-                resource_requirements=self.resource_requirements,
-                tes_uris=self.tes_uris,
-            )
+            self.set_defaults(defaults=defaults)
 
         # Sanitize run mode
-        mode = self.sanitize_mode()
+        try:
+            self.sanitize_mode()
+        except ValidationError:
+            raise
 
-        # Check run mode
-        if mode is None:
-            throw(
-                ValidationError,
-                "Parameter 'mode' is invalid.",
-            )
+        # Check for invalid parameters
+        for key, value in self.to_dict().items():
+            if value is None:
+                raise ValidationError(f"Parameter '{key}' is invalid.")
 
         # If DRS objects have been passed, at least one DRS instance has to be
         # available
         if self.drs_ids and not self.drs_uris: 
-            throw(
-                ValidationError,
-                "No services for accesing input objects defined.",
+            raise ValidationError(
+                "No services for accesing input objects defined."
             )
 
         # At least one TES instance has to be available
         if not self.tes_uris:
-            throw(
-                ValidationError,
-                "No TES instance has been specified.",
-            )
+            raise ValidationError("No TES instance has been specified.")
 
 
     def set_defaults(
         self,
         defaults: Mapping,
-        **kwargs: Any,
     ) -> None:
         """
         Replaces any unset values for `**kwargs` with values from a mapping of
@@ -355,42 +355,34 @@ class Request:
                 values if undefined. Keys are used to look up default values in the
                 `defaults` dictionary. Objects whose keys are not available in the
                 `defaults` dictionary will be skipped with a warning.
-        :return: Dictionary corresponding to `**kwargs`, with updated values
         """
-        # Initialize result dictionary
-        return_dict = {}
-
-        # Iterate over keyword arguments
-        for name, value in sorted(kwargs.items()):
+        # Iterate over defaults
+        for key, value in sorted(defaults.items()):
 
             # Check whether value is already set
-            if value is not None:
+            try:
+                attr_val = getattr(self, name=key)
+            except AttributeError:
+                logger.warn(
+                    f"Object has no attribute {key}. Skipped."
+                )
+                continue
+
+            # Set default value            
+            if attr_val is None:
+                setattr(self, name=key, value=value)
                 logger.debug(
-                    f"Object '{name}' is not undefined. No default value set."
+                    f"No value for attribute '{key}' defined. Default value " \
+                    f"'{value}' set."
                 )
-
-            # Warn if no default value is available
-            elif not name in defaults:
-                logger.warning(
-                    f"No default value available for object '{name}'."
-                )
-
-            # Set default value
-            else:
-                logger.debug(
-                    f"No value for object '{name}' is defined. Default value set."
-                )
-                value = defaults[name]
-
-            # Add value to return dictionary
-            return_dict[name] = value
 
 
     def sanitize_mode(
+        self,
         mode: Union[float, int, Mode, None, str] = None
-    ) -> Union[float, None]:
+    ) -> None:
         """
-        Validates, sanitizes and returns run mode.
+        Validates/sanitizes run mode.
 
         :param mode: Either
                 - a `models.Mode` enumeration member or value
@@ -398,43 +390,37 @@ class Request:
                 - one of integers -1, 0, 1
                 - a float between 0 and 1
 
-        :return: Sanitized mode of type `float`. None` is returned if an invalid
-                value is passed.
+        :raises TEStribute.errors.ValidationError: Invalid mode set.
         """
+        # Set error message
+        e = f"Run mode undefined. Invalid mode value passed: {mode}"
+
         # Check if mode is `Mode` instance
-        if isinstance(mode, Mode):
-            return float(mode.value)
+        if isinstance(self.mode, Mode):
+            self.mode = float(self.mode.value)
 
         # Check if mode is `Mode` key
-        if isinstance(mode, str):
+        elif isinstance(self.mode, str):
             try:
-                return float(Mode[mode].value)
+                self.mode = float(Mode[mode].value)
             except KeyError:
-                logger.warning(
-                    f"Run mode undefined. Invalid mode value passed: {mode}"
-                )
-                return None
+                raise ValidationError(e)
 
         # Check if mode is `Mode` value
-        if isinstance(mode, int):
+        elif isinstance(self.mode, int):
             try:
-                return float(Mode(mode).value)
+                self.mode = float(Mode(mode).value)
             except ValueError:
-                logger.warning(
-                    f"Run mode undefined. Invalid mode value passed: {mode}"
-                )
-                return None
+                raise ValidationError(e)
 
         # Check if mode is allowed float
-        if isinstance(mode, float):
-            if mode < 0 or mode > 1:
-                logger.warning(
-                    f"Run mode undefined. Invalid mode value passed: {mode}"
-                )
-                return None
-            else:
-                return mode
-
+        elif isinstance(self.mode, float):
+            if self.mode < 0 or self.mode > 1:
+                raise ValidationError(e)
+        
+        # Raise ValidationError if mode is of any other type
+        else:
+            raise ValidationError(e)
 
 
 class ServiceCombination:
