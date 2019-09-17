@@ -2,12 +2,13 @@
 Object models for representing nested, dependent data structures.
 """
 import enum
-from typing import (Iterable, Optional, Mapping, Union)
+import logging
+from typing import (Any, Iterable, Mapping, Optional, Union)
 
+from TEStribute.errors import (throw, ValidationError)
 
-# TODO: Implement classes that represent the following data structures:
-# - "task_info" => better: make use of TES `tesTaskInfo` model with `bravado`
-# - "object_info" => better: make use of DRS `Object` model with `bravado`
+logger = logging.getLogger("TEStribute")
+
 
 class AccessMethodType(enum.Enum):
     """
@@ -260,23 +261,180 @@ class Request:
     """
     def __init__(
         self,
-        resource_requirements: ResourceRequirements,
-        tes_uris: TesUris,
-        drs_ids: DrsIds = DrsIds(),
-        drs_uris: DrsUris = DrsUris(),
-        mode: Optional[Union[float, int, Mode, str]] = Mode(0.5),
+        resource_requirements: ResourceRequirements = None,
+        tes_uris: Optional[TesUris] = None,
+        drs_ids: Optional[DrsIds] = None,
+        drs_uris: Optional[DrsUris] = None,
+        mode: Optional[Union[float, int, Mode, str]] = None,
     ) -> None:
+        """
+        :param resource_requirements: Dictionary of resources required for the
+                task; of the form described in the `tesResources` model of the
+                _modified_ GA4GH Task Execution Service schema as described here:
+                https://github.com/elixir-europe/mock-TES/blob/master/mock_tes/specs/schema.task_execution_service.d55bf88.openapi.modified.yaml
+                Note that the `preemptible` and `zones` properties are currently
+                not used.
+        :param tes_uris: List of root URIs to known TES instances.
+        :param drs_ids: List of DRS identifiers of input files required for the
+                task. Can be derived from `inputs` property of the `tesTask`
+                model of the GA4GH Task Execution Service schema described here:
+                https://github.com/ga4gh/task-execution-schemas/blob/develop/openapi/task_execution.swagger.yaml
+        :param drs_uris: List of root URIs to known DRS instances.
+        :param mode: Either a `mode.Mode` enumeration object, one of its members
+                'cost', 'time' or 'random', or one of its values 0, 1, -1,
+                respetively. Depending on the mode, services are rank-ordered by
+                increasing cost or time, or are randomized for testing/control
+                purposes; it is also possible to pass a float between 0 and 1;
+                in that case, the value determines the weight between cost (0)
+                and time (1) optimization.
+        """
         self.resource_requirements = resource_requirements
         self.tes_uris = tes_uris
         self.drs_ids = drs_ids
         self.drs_uris = drs_uris
         self.mode = mode
-    
+
+
     def validate(
         self,
-        defaults: Mapping,
+        defaults: Optional[Mapping],
     ) -> None:
-        pass
+        """
+        Sets defaults, validates and sanitizes instance attributes.
+
+        :param defaults: Dictionary of default values.
+        """
+        # Set defaults if values are missing
+        if defaults is not None:
+            self.set_defaults(
+                defaults=defaults,
+                drs_ids=self.drs_ids,
+                drs_uris=self.drs_uris,
+                mode=self.mode,
+                resource_requirements=self.resource_requirements,
+                tes_uris=self.tes_uris,
+            )
+
+        # Sanitize run mode
+        mode = self.sanitize_mode()
+
+        # Check run mode
+        if mode is None:
+            throw(
+                ValidationError,
+                "Parameter 'mode' is invalid.",
+            )
+
+        # If DRS objects have been passed, at least one DRS instance has to be
+        # available
+        if self.drs_ids and not self.drs_uris: 
+            throw(
+                ValidationError,
+                "No services for accesing input objects defined.",
+            )
+
+        # At least one TES instance has to be available
+        if not self.tes_uris:
+            throw(
+                ValidationError,
+                "No TES instance has been specified.",
+            )
+
+
+    def set_defaults(
+        self,
+        defaults: Mapping,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Replaces any unset values for `**kwargs` with values from a mapping of
+        default values.
+
+        :param defaults: Dictionary of default values for the keys in `**kwargs`
+        :param **kwargs: Arbitrary set of objects to be replaced with default
+                values if undefined. Keys are used to look up default values in the
+                `defaults` dictionary. Objects whose keys are not available in the
+                `defaults` dictionary will be skipped with a warning.
+        :return: Dictionary corresponding to `**kwargs`, with updated values
+        """
+        # Initialize result dictionary
+        return_dict = {}
+
+        # Iterate over keyword arguments
+        for name, value in sorted(kwargs.items()):
+
+            # Check whether value is already set
+            if value is not None:
+                logger.debug(
+                    f"Object '{name}' is not undefined. No default value set."
+                )
+
+            # Warn if no default value is available
+            elif not name in defaults:
+                logger.warning(
+                    f"No default value available for object '{name}'."
+                )
+
+            # Set default value
+            else:
+                logger.debug(
+                    f"No value for object '{name}' is defined. Default value set."
+                )
+                value = defaults[name]
+
+            # Add value to return dictionary
+            return_dict[name] = value
+
+
+    def sanitize_mode(
+        mode: Union[float, int, Mode, None, str] = None
+    ) -> Union[float, None]:
+        """
+        Validates, sanitizes and returns run mode.
+
+        :param mode: Either
+                - a `models.Mode` enumeration member or value
+                - one of strings 'cost', 'time' or 'random'
+                - one of integers -1, 0, 1
+                - a float between 0 and 1
+
+        :return: Sanitized mode of type `float`. None` is returned if an invalid
+                value is passed.
+        """
+        # Check if mode is `Mode` instance
+        if isinstance(mode, Mode):
+            return float(mode.value)
+
+        # Check if mode is `Mode` key
+        if isinstance(mode, str):
+            try:
+                return float(Mode[mode].value)
+            except KeyError:
+                logger.warning(
+                    f"Run mode undefined. Invalid mode value passed: {mode}"
+                )
+                return None
+
+        # Check if mode is `Mode` value
+        if isinstance(mode, int):
+            try:
+                return float(Mode(mode).value)
+            except ValueError:
+                logger.warning(
+                    f"Run mode undefined. Invalid mode value passed: {mode}"
+                )
+                return None
+
+        # Check if mode is allowed float
+        if isinstance(mode, float):
+            if mode < 0 or mode > 1:
+                logger.warning(
+                    f"Run mode undefined. Invalid mode value passed: {mode}"
+                )
+                return None
+            else:
+                return mode
+
 
 
 class ServiceCombination:
