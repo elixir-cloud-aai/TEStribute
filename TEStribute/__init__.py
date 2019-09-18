@@ -29,10 +29,10 @@ def rank_services(
     jwt: Optional[str] = None,
     drs_ids: Iterable = [],
     drs_uris: Iterable = [],
-    mode: Optional[Union[float, int, models.Mode, str]] = models.Mode.random,
+    mode: Union[float, int, models.Mode, str] = 0.5,
     resource_requirements: Mapping = {},
     tes_uris: Iterable = [],
-) -> Dict[str, List]:
+) -> models.Response:
     """
     Main function that returns a rank-ordered list of GA4GH TES and DRS
     services to use when submitting a TES task to decrease total costs and or
@@ -82,6 +82,11 @@ def rank_services(
         header="=== USER INPUT ===",
         level=logging.DEBUG,
         logger=logger,
+        drs_ids=drs_ids,
+        drs_uris=drs_uris,
+        mode=mode,
+        resource_requirements=resource_requirements,
+        tes_uris=tes_uris,
     )
     request = models.Request(
         drs_ids=models.DrsIds(drs_ids),
@@ -91,11 +96,6 @@ def rank_services(
             **resource_requirements
         ),
         tes_uris=models.TesUris(tes_uris),
-    )
-    log_yaml(
-        level=logging.DEBUG,
-        logger=logger,
-        **request.to_dict(),
     )
 
     # Parse config file
@@ -111,51 +111,38 @@ def rank_services(
         config=config,
     )
 
-    # Set defaults & validate input parameters
+    # Validate input parameters
     log_yaml(
-        header="=== VALIDATED INPUT PARAMETERS ===",
+        header="=== VALIDATION ===",
         level=logging.DEBUG,
         logger=logger,
     )
     try:
-        request.validate(defaults=config)
+        request.validate()
     except ValidationError:
         raise
-    log_yaml(
-        level=logging.INFO,
-        logger=logger,
-        **request.to_dict(),
-    )
-    
+
     # Get metadata for input objects
     # TODO: Use model/class for return object
-    drs_object_info = dict()
-    if request.drs_ids is not None and \
-       request.drs_uris is not None:  # Already verified, added for type
-                                      # checking complaint
-        try:
-            drs_object_info = fetch_drs_objects_metadata(
-                drs_uris=request.drs_uris,
-                drs_ids=request.drs_ids,
-                timeout=config["timeout"]
-            )
-        except ResourceUnavailableError:
-            raise
+    try:
+        drs_object_info = fetch_drs_objects_metadata(
+            drs_uris=request.drs_uris,
+            drs_ids=request.drs_ids,
+            timeout=config["timeout"]
+        )
+    except ResourceUnavailableError:
+        raise
 
     # Get TES task info for resource requirements
     # TODO: Use model/class for return object
-    tes_task_info = dict()
-    if request.tes_uris is not None and \
-       request.resource_requirements is not None:  # Already verified, added for
-                                                   # type checking complaint
-        try:
-            tes_task_info = fetch_tes_task_info(
-                tes_uris=request.tes_uris,
-                resource_requirements=request.resource_requirements,
-                timeout=config["timeout"]
-            )
-        except ResourceUnavailableError:
-            raise
+    try:
+        tes_task_info = fetch_tes_task_info(
+            tes_uris=request.tes_uris,
+            resource_requirements=request.resource_requirements,
+            timeout=config["timeout"]
+        )
+    except ResourceUnavailableError:
+        raise
 
     # Get valid TES-DRS combinations
     # TODO: Use model/class for return object
@@ -195,7 +182,7 @@ def rank_services(
     ranked_services = rank_order.cost_time(
         costs=tes_costs,
         times=tes_times,
-        weight=mode,
+        weight=request.mode_float,
     )
 
     # Randomize ranks

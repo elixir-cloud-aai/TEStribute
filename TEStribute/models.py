@@ -3,7 +3,7 @@ Object models for representing nested, dependent data structures.
 """
 import enum
 import logging
-from typing import (Any, Dict, Iterable, Mapping, Optional, Union)
+from typing import (Dict, Iterable, Union)
 
 from TEStribute.errors import (ValidationError)
 
@@ -261,16 +261,17 @@ class Request:
     """
     def __init__(
         self,
-        resource_requirements: ResourceRequirements = None,
-        tes_uris: Optional[TesUris] = None,
-        drs_ids: Optional[DrsIds] = None,
-        drs_uris: Optional[DrsUris] = None,
-        mode: Optional[Union[float, int, Mode, str]] = None,
+        resource_requirements: ResourceRequirements,
+        tes_uris: TesUris,
+        drs_ids: DrsIds = DrsIds([]),
+        drs_uris: DrsUris = DrsUris([]),
+        mode: Union[float, int, Mode, str] = 0.5,
     ) -> None:
         """
-        :param resource_requirements: Dictionary of resources required for the
+        :param resource_requirements: Mapping of resources required for the
                 task; of the form described in the `tesResources` model of the
-                _modified_ GA4GH Task Execution Service schema as described here:
+                _modified_ GA4GH Task Execution Service schema as described
+                here:
                 https://github.com/elixir-europe/mock-TES/blob/master/mock_tes/specs/schema.task_execution_service.d55bf88.openapi.modified.yaml
                 Note that the `preemptible` and `zones` properties are currently
                 not used.
@@ -293,6 +294,7 @@ class Request:
         self.drs_ids = drs_ids
         self.drs_uris = drs_uris
         self.mode = mode
+        self.mode_float: float = -1000
     
 
     def to_dict(self) -> Dict:
@@ -303,22 +305,14 @@ class Request:
             "drs_ids": self.drs_ids,
             "drs_uris": self.drs_uris,
             "mode": self.mode,
+            "mode_float": self.mode_float,
         }
 
 
-    def validate(
-        self,
-        defaults: Optional[Mapping],
-    ) -> None:
+    def validate(self) -> None:
         """
-        Sets defaults, validates and sanitizes instance attributes.
-
-        :param defaults: Dictionary of default values.
+        Validates and sanitizes instance attributes.
         """
-        # Set defaults if values are missing
-        if defaults is not None:
-            self.set_defaults(defaults=defaults)
-
         # Sanitize run mode
         try:
             self.sanitize_mode()
@@ -344,75 +338,6 @@ class Request:
             raise ValidationError("No TES instance has been specified.")
 
 
-    def set_defaults(
-        self,
-        defaults: Mapping,
-    ) -> None:
-        """
-        Replaces any unset values for `**kwargs` with values from a mapping of
-        default values.
-
-        :param defaults: Dictionary of default values for the keys in `**kwargs`
-        """
-        # Set resource requirements
-        if self.resource_requirements is None:
-            try:
-                self.resource_requirements = ResourceRequirements(
-                    **defaults['resource_requirements']
-                )
-            except KeyError:
-                raise ValidationError(
-                    "Parameter 'resource_requirements' is not set and no " \
-                    "default provided."
-                )
-
-        # Set TES URIs
-        if self.tes_uris is None:
-            try:
-                self.tes_uris = TesUris(
-                    defaults['tes_uris']
-                )
-            except KeyError:
-                raise ValidationError(
-                    "Parameter 'tes_uris' is not set and no " \
-                    "default provided."
-                )
-        
-        # Set DRS IDs
-        if self.drs_ids is None:
-            try:
-                self.drs_ids = DrsIds(
-                    defaults['drs_ids']
-                )
-            except KeyError:
-                raise ValidationError(
-                    "Parameter 'drs_ids' is not set and no " \
-                    "default provided."
-                )
-
-        # Set DRS URIs
-        if self.drs_uris is None:
-            try:
-                self.drs_uris = DrsUris(
-                    defaults['drs_uris']
-                )
-            except KeyError:
-                raise ValidationError(
-                    "Parameter 'drs_uris' is not set and no " \
-                    "default provided."
-                )
-
-        # Set mode
-        if self.mode is None:
-            try:
-                self.mode = defaults['mode']
-            except KeyError:
-                raise ValidationError(
-                    "Parameter 'mode' is not set and no " \
-                    "default provided."
-                )
-
-
     def sanitize_mode(
         self,
         mode: Union[float, int, Mode, None, str] = None
@@ -433,26 +358,29 @@ class Request:
 
         # Check if mode is `Mode` instance
         if isinstance(self.mode, Mode):
-            self.mode = float(self.mode.value)
+            self.mode_float = float(self.mode.value)
 
         # Check if mode is `Mode` key
         elif isinstance(self.mode, str):
             try:
-                self.mode = float(Mode[self.mode].value)
+                self.mode_float = float(Mode[self.mode].value)
             except KeyError:
                 raise ValidationError(e)
 
         # Check if mode is `Mode` value
         elif isinstance(self.mode, int):
             try:
-                self.mode = float(Mode(self.mode).value)
+                self.mode_float = float(Mode(self.mode).value)
             except ValueError:
                 raise ValidationError(e)
 
         # Check if mode is allowed float
         elif isinstance(self.mode, float):
-            if self.mode < 0 or self.mode > 1:
+            if 0 <= self.mode <= 1:
+                self.mode_float = self.mode
+            else:
                 raise ValidationError(e)
+            
         
         # Raise ValidationError if mode is of any other type
         else:

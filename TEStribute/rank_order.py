@@ -1,10 +1,10 @@
 """
 """
-from typing import Dict
+from typing import (Dict, Iterable)
 
 
 def randomize(
-    uris: list,
+    uris: Iterable,
     object_info: Dict,
 ) -> Dict:
     """
