@@ -12,7 +12,7 @@ from TEStribute.access_tes import fetch_tes_task_info
 from TEStribute.costs import estimate_costs
 from TEStribute.config.parse_config import config_parser
 from TEStribute.distances import estimate_distances
-from TEStribute.errors import (ResourceUnavailableError, throw, ValidationError)
+from TEStribute.errors import (ResourceUnavailableError, ValidationError)
 from TEStribute.log.logging_functions import log_yaml
 from TEStribute.log import setup_logger
 from TEStribute.times import estimate_times

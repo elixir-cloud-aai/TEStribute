@@ -10,7 +10,7 @@ import drs_client
 from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
 
-from TEStribute.errors import (throw, ResourceUnavailableError)
+from TEStribute.errors import (ResourceUnavailableError)
 from TEStribute.models import (DrsIds, DrsUris)
 
 logger = logging.getLogger("TEStribute")
@@ -69,10 +69,9 @@ def fetch_drs_objects_metadata(
             # Check availability of objects
             for drs_id in drs_ids.items:
                 if drs_id not in result_dict:
-                    throw(
-                        ResourceUnavailableError,
-                        f"Object '{drs_id}' is not available at any of the ",
-                        f"specified DRS instances.",
+                    raise ResourceUnavailableError(
+                        f"Object '{drs_id}' is not available at any of the " \
+                        f"specified DRS instances."
                     )
 
         # Return results

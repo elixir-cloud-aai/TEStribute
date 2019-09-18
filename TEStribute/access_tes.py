@@ -9,7 +9,7 @@ from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
 import tes_client
 
-from TEStribute.errors import (ResourceUnavailableError, throw)
+from TEStribute.errors import (ResourceUnavailableError)
 from TEStribute.models import (ResourceRequirements, TesUris)
 
 logger = logging.getLogger("TEStribute")
@@ -60,8 +60,7 @@ def fetch_tes_task_info(
         
     # Check whether at least one TES instance provided task info
     if check_results and not result_dict:
-        throw(
-            ResourceUnavailableError,
+        raise ResourceUnavailableError(
             "None of the specified TES instances provided any task info."
         )
     

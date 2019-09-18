@@ -328,7 +328,9 @@ class Request:
         # Check for invalid parameters
         for key, value in self.to_dict().items():
             if value is None:
-                raise ValidationError(f"Parameter '{key}' is invalid.")
+                raise ValidationError(
+                    f"Invalid '{key}' value passed: '{value}'."
+                )
 
         # If DRS objects have been passed, at least one DRS instance has to be
         # available
@@ -351,29 +353,63 @@ class Request:
         default values.
 
         :param defaults: Dictionary of default values for the keys in `**kwargs`
-        :param **kwargs: Arbitrary set of objects to be replaced with default
-                values if undefined. Keys are used to look up default values in the
-                `defaults` dictionary. Objects whose keys are not available in the
-                `defaults` dictionary will be skipped with a warning.
         """
-        # Iterate over defaults
-        for key, value in sorted(defaults.items()):
-
-            # Check whether value is already set
+        # Set resource requirements
+        if self.resource_requirements is None:
             try:
-                attr_val = getattr(self, name=key)
-            except AttributeError:
-                logger.warn(
-                    f"Object has no attribute {key}. Skipped."
+                self.resource_requirements = ResourceRequirements(
+                    **defaults['resource_requirements']
                 )
-                continue
+            except KeyError:
+                raise ValidationError(
+                    "Parameter 'resource_requirements' is not set and no " \
+                    "default provided."
+                )
 
-            # Set default value            
-            if attr_val is None:
-                setattr(self, name=key, value=value)
-                logger.debug(
-                    f"No value for attribute '{key}' defined. Default value " \
-                    f"'{value}' set."
+        # Set TES URIs
+        if self.tes_uris is None:
+            try:
+                self.tes_uris = TesUris(
+                    defaults['tes_uris']
+                )
+            except KeyError:
+                raise ValidationError(
+                    "Parameter 'tes_uris' is not set and no " \
+                    "default provided."
+                )
+        
+        # Set DRS IDs
+        if self.drs_ids is None:
+            try:
+                self.drs_ids = DrsIds(
+                    defaults['drs_ids']
+                )
+            except KeyError:
+                raise ValidationError(
+                    "Parameter 'drs_ids' is not set and no " \
+                    "default provided."
+                )
+
+        # Set DRS URIs
+        if self.drs_uris is None:
+            try:
+                self.drs_uris = DrsUris(
+                    defaults['drs_uris']
+                )
+            except KeyError:
+                raise ValidationError(
+                    "Parameter 'drs_uris' is not set and no " \
+                    "default provided."
+                )
+
+        # Set mode
+        if self.mode is None:
+            try:
+                self.mode = defaults['mode']
+            except KeyError:
+                raise ValidationError(
+                    "Parameter 'mode' is not set and no " \
+                    "default provided."
                 )
 
 
@@ -393,7 +429,7 @@ class Request:
         :raises TEStribute.errors.ValidationError: Invalid mode set.
         """
         # Set error message
-        e = f"Run mode undefined. Invalid mode value passed: {mode}"
+        e = f"Invalid 'mode' value passed: '{self.mode}'."
 
         # Check if mode is `Mode` instance
         if isinstance(self.mode, Mode):
@@ -402,14 +438,14 @@ class Request:
         # Check if mode is `Mode` key
         elif isinstance(self.mode, str):
             try:
-                self.mode = float(Mode[mode].value)
+                self.mode = float(Mode[self.mode].value)
             except KeyError:
                 raise ValidationError(e)
 
         # Check if mode is `Mode` value
         elif isinstance(self.mode, int):
             try:
-                self.mode = float(Mode(mode).value)
+                self.mode = float(Mode(self.mode).value)
             except ValueError:
                 raise ValidationError(e)
 

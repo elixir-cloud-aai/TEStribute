@@ -2,6 +2,7 @@
 Custom errors, error handler functions and function to register error handlers
 with a Connexion app instance.
 """
+from TEStribute.decorators import log_exception
 import logging
 from typing import (Type, Union)
 
@@ -10,6 +11,8 @@ from connexion.exceptions import ExtraParameterProblem
 from flask import Response
 from json import dumps
 from werkzeug.exceptions import (BadRequest, InternalServerError, Unauthorized)
+
+from TEStribute.decorators import log_exception
 
 logger = logging.getLogger("TEStribute")
 
@@ -54,58 +57,15 @@ class ResourceUnavailableError(Exception):
         super(ResourceUnavailableError, self).__init__(description, **kwargs)
 
 
-# Custom error handlers
-def throw(
-    exception: Type[Exception],
-    *args: str,
-    log: bool = True,
-    logger: logging.Logger = logger,
-    level: int = logging.ERROR,
-    tb: bool = False,
-) -> Exception:
-    """
-    """
-    message = " ".join(str(item.rstrip()) for item in args)
-    if log:
-        logger.log(level=level, msg=message, exc_info=tb)
-    raise exception(message)
-
-
-def throwup(
-    exception: Exception,
-    *args: str,
-    cast: Union[None, Type[Exception]] = None,
-    chain: bool = True,
-    log: bool = True,
-    logger: logging.Logger = logging.getLogger(__name__),
-    level: int = logging.ERROR,
-    tb: bool = False,
-) -> Exception:
-    """
-    """
-    message = " ".join(str(item.rstrip()) for item in args)
-    if log:
-        logger.log(level=level, msg=message, exc_info=tb)
-    if cast is None:
-        if chain:
-            raise type(exception)(message) from exception
-        else:
-            raise type(exception)(message)
-    else:
-        if chain:
-            raise cast(message) from exception
-        else:
-            raise cast(message)
-
-
-def handle_bad_request_validation(response: Response) -> Response:
+@log_exception()
+def handle_bad_request_validation(exception: Response) -> Response:
     return Response(
         response=dumps({
-            'code': int(response.status_code),
+            'code': int(exception.status_code),
             'errors': [{
-                'reason': response.json["title"].replace(" ", ""),
+                'reason': exception.json["title"].replace(" ", ""),
                 'message': [
-                    response.json["detail"],
+                    exception.json["detail"],
                 ],
             }],
             'message': "The request could not be processed.",
@@ -115,15 +75,14 @@ def handle_bad_request_validation(response: Response) -> Response:
     )
 
 
+@log_exception()
 def handle_bad_request(exception: BadRequest) -> Response:
     return Response(
         response=dumps({
             'code': int(exception.code),
             'errors': [{
                 'reason': str(exception.__class__).split("'")[1],
-                'message': [
-                    exception.description,
-                ],
+                'message': exception.description,
             }],
             'message': "The request could not be processed.",
         }),
@@ -132,30 +91,30 @@ def handle_bad_request(exception: BadRequest) -> Response:
     )
 
 
-def handle_internal_server_error(exception: Exception) -> Response:
+@log_exception(tb=True)
+def handle_internal_server_error(exception: InternalServerError) -> Response:
     return Response(
         response=dumps({
-            'code': '500',
+            'code': int(exception.code),
             'errors': [],
-            'message': 'An unexpected error occurred.',
+            'message': ['An unexpected error occurred.'],
             }),
         status=500,
         mimetype="application/problem+json",
     )
 
+
+@log_exception()
 def handle_unauthorized(exception: Unauthorized) -> Response:
     return Response(
         response=dumps({
             'code': int(exception.code),
             'errors': [{
                 'reason': str(exception.__class__).split("'")[1],
-                'message': [
-                    exception.description,
-                ],
+                'message': exception.description,
             }],
             'message': "The request is unauthorized.",
         }),
         status=int(exception.code),
         mimetype="application/problem+json"
     )
-

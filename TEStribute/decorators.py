@@ -4,7 +4,7 @@ from connexion import request
 from flask import current_app
 from functools import wraps
 import logging
-from typing import Callable
+from typing import (Callable, Optional)
 
 from werkzeug.exceptions import Unauthorized
 
@@ -45,3 +45,33 @@ def auth_token_optional(fn: Callable) -> Callable:
             return fn(*args, **kwargs)
 
     return wrapper
+
+
+def log_exception(
+    logger: logging.Logger = logger,
+    level: int = logging.ERROR,
+    tb: bool = False,
+    n: int = 0,
+) -> Callable:
+    """
+    When attached to an error handler, logs every error caught by the handler.
+ 
+    :param logger: Logger object.
+    """
+
+    def decorator(fn: Callable) -> Callable:
+
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+
+            # Log exception
+            e = args[n]
+            err = f"{e.code} {e.name}: {''.join(e.description)}"
+            logger.log(level=level, msg=err, exc_info=tb)
+
+            # Return wrapped function
+            return fn(*args, **kwargs)
+
+        return wrapper
+    
+    return decorator
