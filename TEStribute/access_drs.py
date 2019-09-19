@@ -3,7 +3,7 @@ Functions that interact with the DRS service
 """
 from collections import defaultdict
 import logging
-from typing import Dict, List, Union
+from typing import (Dict, Optional)
 
 from bravado.exception import HTTPNotFound
 import drs_client
@@ -11,7 +11,7 @@ from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
 
 from TEStribute.errors import (ResourceUnavailableError)
-from TEStribute.models import (DrsIds, DrsUris)
+from TEStribute.models import (DrsIds, DrsUris, DrsObject)
 
 logger = logging.getLogger("TEStribute")
 
@@ -19,9 +19,10 @@ logger = logging.getLogger("TEStribute")
 def fetch_drs_objects_metadata(
     drs_uris: DrsUris,
     drs_ids: DrsIds,
+    jwt: Optional[str] = None,
     check_results: bool = True,
     timeout: float = 3,
-) -> Dict:
+) -> Dict[str, str]:
     """
     Returns access information for an iterable object of DRS identifiers
     available at the specified DRS instances.
@@ -82,7 +83,7 @@ def _fetch_drs_objects_metadata(
     uri: str,
     *ids: str,
     timeout: float = 3,
-) -> Dict:
+) -> Dict[str, DrsObject]:
     """
     Returns access information for an iterable object of DRS identifiers
     available at the specified DRS instance.
@@ -100,7 +101,7 @@ def _fetch_drs_objects_metadata(
             connection error at any point, an empty dictionary is returned.
     """
     # Initialize results container
-    objects_metadata = {}
+    objects_metadata: Dict[str, DrsObject] = {}
 
     # Establish connection with DRS; handle exceptions
     try:

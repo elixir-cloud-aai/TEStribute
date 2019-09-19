@@ -124,6 +124,7 @@ def rank_services(
 
     # Get metadata for input objects
     # TODO: Use model/class for return object
+    # TODO: Add to constructor of Response
     try:
         drs_object_info = fetch_drs_objects_metadata(
             drs_uris=request.drs_uris,
@@ -135,6 +136,7 @@ def rank_services(
 
     # Get TES task info for resource requirements
     # TODO: Use model/class for return object
+    # TODO: Add to constructor of Response
     try:
         tes_task_info = fetch_tes_task_info(
             tes_uris=request.tes_uris,
@@ -146,16 +148,20 @@ def rank_services(
 
     # Get valid TES-DRS combinations
     # TODO: Use model/class for return object
+    # TODO: Add to constructor of Response
     valid_service_combos = get_valid_service_combinations(
         task_info=tes_task_info,
         object_info=drs_object_info,
     )
 
     # Compute distances
-    # TODO: Should be method of class ServiceCombinations
+    # TODO: Add to constructor of Response
     tes_object_distances = estimate_distances(
         combinations=valid_service_combos,
     )
+
+    # Filter service combinations
+    # TODO: Add to constructor of Service Combinations
 
     # Compute cost estimates
     # TODO: Should be method of class ServiceCombinations
@@ -176,13 +182,13 @@ def rank_services(
             distances=tes_object_distances,
         )
     else: tes_times = {}
-
+    mode: float = float(request.mode)
     # Rank by costs/times
     # TODO: Should be method of class ServiceCombinations
     ranked_services = rank_order.cost_time(
         costs=tes_costs,
         times=tes_times,
-        weight=request.mode_float,
+        weight=request.mode,
     )
 
     # Randomize ranks
