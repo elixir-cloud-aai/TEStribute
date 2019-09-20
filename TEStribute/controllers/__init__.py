@@ -4,13 +4,13 @@ Controller for `POST /rank-services` endpoint.
 from flask import Response
 from werkzeug.exceptions import (BadRequest, InternalServerError, Unauthorized)
 
-from TEStribute import rank_services
+from TEStribute import rank_services as rank
 from TEStribute.decorators import auth_token_optional
 from TEStribute.errors import (ResourceUnavailableError, ValidationError)
 
 
 @auth_token_optional
-def RankServices(
+def rank_services(
     body,
     *args,
     **kwargs
@@ -32,14 +32,14 @@ def RankServices(
         jwt=None
     # Rank services
     try:
-        return rank_services(
+        return rank(
             drs_ids=body.get("drs_ids"),
             drs_uris=body.get("drs_uris"),
             mode=body.get("mode"),
             resource_requirements=body.get("resource_requirements"),
             tes_uris=body.get("tes_uris"),
             jwt=jwt,
-        )
+        ).to_dict()
     except ValidationError as e:
         raise BadRequest(e.args) from e
     except ResourceUnavailableError as e:

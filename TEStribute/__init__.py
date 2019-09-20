@@ -8,6 +8,8 @@ from typing import (Iterable, Mapping, Optional, Union)
 from werkzeug.exceptions import Unauthorized
 
 from TEStribute import models
+import TEStribute.models.request as rq
+import TEStribute.models.response as rs
 from TEStribute.config import config_parser
 from TEStribute.errors import ValidationError
 from TEStribute.log import (log_yaml, setup_logger)
@@ -26,7 +28,7 @@ def rank_services(
     mode: Union[float, int, models.Mode, str] = 0.5,
     resource_requirements: Mapping = {},
     tes_uris: Iterable = [],
-) -> models.Response:
+) -> rs.Response:
     """
     Main function that returns a rank-ordered list of GA4GH TES and DRS
     services to use when submitting a TES task to decrease total costs and or
@@ -72,11 +74,7 @@ def rank_services(
             where [drs_id] entries are taken from parameter `drs_ids`.
     """
     # Parse config file
-    log_yaml(
-        header="=== CONFIG ===",
-        level=logging.DEBUG,
-        logger=logger,
-    )
+    logger.debug("=== CONFIG ===")
     config = config_parser()
     log_yaml(
         level=logging.DEBUG,
@@ -94,10 +92,9 @@ def rank_services(
         mode=mode,
         resource_requirements=resource_requirements,
         tes_uris=tes_uris,
-        jwt=jwt,
     )
     try:
-        request = models.Request(
+        request = rq.Request(
             drs_ids=drs_ids,
             drs_uris=drs_uris,
             mode=mode,        
@@ -105,6 +102,7 @@ def rank_services(
                 **resource_requirements
             ),
             tes_uris=tes_uris,
+            authorization_required=config["security"]["authorization_required"],
             jwt=jwt,
             jwt_config=config["security"]["jwt"],
         )
@@ -112,20 +110,27 @@ def rank_services(
         raise
 
     # Validate input parameters
-    log_yaml(
-        header="=== VALIDATION ===",
-        level=logging.DEBUG,
-        logger=logger,
-    )
+    logger.debug("=== VALIDATION ===")
     try:
         request.validate()
     except ValidationError:
         raise
+    log_yaml(
+        level=logging.DEBUG,
+        logger=logger,
+        **request.to_dict(),
+    )
 
     # Create Response object
-    response = models.Response(
+    logger.debug("=== OUTPUT ===")
+    response = rs.Response(
         request=request,
         timeout=config["timeout"],
+    )
+    log_yaml(
+        level=logging.DEBUG,
+        logger=logger,
+        **response.to_dict()
     )
 
     # Return response

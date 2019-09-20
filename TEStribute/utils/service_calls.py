@@ -1,10 +1,16 @@
 """
 Functions that interact with external services.
 """
+# TODO: Get rid of Bravado-dependency (and thus TES-cli and DRS-cli)
+# TODO: DRS and TES clients: implement class-based solution that validates
+#       responses against schemata
+# TODO: DRS and TES clients: Add authorization header to service calls
+# TODO: DRS client: Cross-check object checksums & sizes, raise exception if
+#       differ
 from collections import defaultdict
 import logging
 import socket
-from typing import (Dict, Iterable, Mapping, Optional)
+from typing import (Dict, Iterable, List, Mapping, Optional)
 
 from bravado.exception import HTTPNotFound
 import drs_client
@@ -17,16 +23,30 @@ import tes_client
 from urllib.parse import urlparse
 
 from TEStribute.errors import ResourceUnavailableError
-from TEStribute.models import (DrsObject, ResourceRequirements)
+from TEStribute.models import (
+    AccessMethod,
+    AccessMethodType,
+    AccessUrl,
+    Checksum,
+    ChecksumType,
+    Costs,
+    Currency,
+    DrsObject,
+    Duration,
+    ResourceRequirements,
+    TaskInfo,
+    TimeUnit,
+)
 
 logger = logging.getLogger("TEStribute")
+
 
 def fetch_drs_objects_metadata(
     drs_uris: Iterable[str],
     drs_ids: Iterable[str],
     jwt: Optional[str] = None,
-    check_results: bool = True,
     timeout: float = 3,
+    check_results: bool = True,
 ) -> Dict[str, Dict[str, DrsObject]]:
     """
     Returns access information for an iterable object of DRS identifiers
@@ -57,8 +77,8 @@ def fetch_drs_objects_metadata(
 
         # Fetch object metadata at current DRS instance
         metadata = _fetch_drs_objects_metadata(
-            uri=drs_uri,
             *drs_ids,
+            uri=drs_uri,
             timeout=timeout,
         )
 
@@ -85,8 +105,8 @@ def fetch_drs_objects_metadata(
 
 
 def _fetch_drs_objects_metadata(
-    uri: str,
     *ids: str,
+    uri: str,
     timeout: float = 3,
 ) -> Dict[str, DrsObject]:
     """
@@ -131,11 +151,10 @@ def _fetch_drs_objects_metadata(
 
     # Fetch metadata for every object; handle exceptions
     for drs_id in ids:
-        # TODO: Cross-check object checksums, die if differ
-        # TODO: Cross-check object sizes, die if differ
         try:
-            objects_metadata[drs_id] = client.getObject(
-                drs_id
+            metadata = client.getObject(
+                object_id=drs_id,
+                timeout=timeout,
             )._as_dict()
         except HTTPNotFound:
             logger.debug(
@@ -149,6 +168,38 @@ def _fetch_drs_objects_metadata(
             )
             continue
 
+        # Generate list of AccessMethods
+        access_methods: List[AccessMethod] = []
+        for access_method in metadata["access_methods"]:
+            access_methods.append(
+                AccessMethod(
+                    type=AccessMethodType(access_method["type"]),
+                    access_url=AccessUrl(
+                        url=access_method["access_url"]["url"],
+                        headers=access_method["access_url"]["headers"],
+                    ),
+                    access_id=access_method["access_id"],
+                    region=access_method["region"],
+                )
+            )
+        # Generate list of Checksums
+        del metadata["access_methods"]
+        checksums: List[Checksum] = []
+        for checksum in metadata["checksums"]:
+            checksums.append(
+                Checksum(
+                    checksum=checksum["checksum"],
+                    type=ChecksumType(checksum["type"]),
+                )
+            )
+        # Generate DrsObject
+        del metadata["checksums"]
+        objects_metadata[drs_id] = DrsObject(
+            access_methods=access_methods,
+            checksums=checksums,
+            **metadata,
+        )
+
     # Return object metadata
     return objects_metadata
 
@@ -156,9 +207,10 @@ def _fetch_drs_objects_metadata(
 def fetch_tes_task_info(
     tes_uris: Iterable[str],
     resource_requirements: ResourceRequirements,
-    check_results: bool = True,
+    jwt: Optional[str] = None,
     timeout: float = 3,
-) -> Dict:
+    check_results: bool = True,
+) -> Dict[str, TaskInfo]:
     """
     Given a set of resource requirements, returns queue time, cost estimates and
     related parameters at the specified TES instances.
@@ -210,7 +262,7 @@ def _fetch_tes_task_info(
     uri: str,
     resource_requirements: ResourceRequirements,
     timeout: float = 3,
-) -> Dict:
+) -> Optional[TaskInfo]:
     """
     Given a set of resource requirements, returns queue time, cost estimates and
     related parameters at the specified TES instance.
@@ -235,26 +287,59 @@ def _fetch_tes_task_info(
         logger.warning(
             f"TES unavailable: connection attempt to '{uri}' timed out."
         )
-        return {}
+        return None
     except (ConnectionError, JSONDecodeError, HTTPNotFound, MissingSchema):
         logger.warning(
             f"TES unavailable: the provided URI '{uri}' could not be " \
             f"resolved."
         )
-        return {}
+        return None
 
     # Fetch task info; handle exceptions
     try:
-        return client.getTaskInfo(
+        task_info = client.getTaskInfo(
             timeout=timeout,
-            **resource_requirements,
+            **resource_requirements.to_dict(),
         )._as_dict()
     except TimeoutError:
         logger.warning(
             f"Connection attempt to TES {uri} timed out. TES " \
             f"unavailable. Skipped."
         )
-        return {}
+        return None
+
+    # Generate TaskInfo object
+    task_info_obj = TaskInfo(
+        costs_total=Costs(
+            amount=task_info["costs_total"]["amount"],
+            currency=Currency(task_info["costs_total"]["currency"]),
+        ),
+        costs_cpu_usage=Costs(
+            amount=task_info["costs_cpu_usage"]["amount"],
+            currency=Currency(task_info["costs_cpu_usage"]["currency"]),
+        ),
+        costs_memory_consumption= Costs(
+            amount=task_info["costs_memory_consumption"]["amount"],
+            currency=Currency(
+                task_info["costs_memory_consumption"]["currency"]
+            ),
+        ),
+        costs_data_storage= Costs(
+            amount=task_info["costs_data_storage"]["amount"],
+            currency=Currency(task_info["costs_data_storage"]["currency"]),
+        ),
+        costs_data_transfer=Costs(
+            amount=task_info["costs_data_transfer"]["amount"],
+            currency=Currency(task_info["costs_data_transfer"]["currency"]),
+        ),
+        queue_time=Duration(
+            duration=task_info["queue_time"]["duration"],
+            unit=TimeUnit(task_info["queue_time"]["unit"]),
+        ),
+    )
+
+    # Return task info
+    return task_info_obj
 
 
 def estimate_distances(
