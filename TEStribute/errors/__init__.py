@@ -2,7 +2,6 @@
 Custom errors, error handler functions and function to register error handlers
 with a Connexion app instance.
 """
-from TEStribute.decorators import log_exception
 import logging
 from typing import (Type, Union)
 

@@ -26,16 +26,12 @@ def auth_token_optional(fn: Callable) -> Callable:
 
             try:
                 jwt = JWT(request=request)
-                jwt.validate()
-                jwt.get_user()
             except Exception as e:
                 raise Unauthorized(e.args) from e
 
             # Return wrapped function with token data
             return fn(
                 jwt=jwt.jwt,
-                claims=jwt.claims,
-                user_id=jwt.user,
                 *args,
                 **kwargs
             )

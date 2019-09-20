@@ -11,7 +11,7 @@ info:
 servers:
 - url: /
 paths:
-  /rank_services:
+  /rank-services:
     post:
       summary: |-
         Given lists of known GA4GH TES and DRS instances and a
