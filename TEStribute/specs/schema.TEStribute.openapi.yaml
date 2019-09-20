@@ -103,29 +103,6 @@ components:
       example:
         amount: 1000
         currency: BTC
-    DrsIds:
-      type: array
-      description: DRS IDs of objects required by the task.
-      example:
-      - object_id-1
-      - object_id-2
-      - object_id-3
-      items:
-        type: string
-      default: []
-    DrsUris:
-      type: array
-      description: |-
-        URIs of known DRS instances that objects may be read from
-        or written to.
-      example:
-      - https://drs-1.service
-      - https://drs-2.service
-      - https://drs-3.service
-      items:
-        type: string
-        format: uri
-      default: []
     Duration:
       required:
       - duration
@@ -194,9 +171,13 @@ components:
       type: object
       properties:
         drs_ids:
-          $ref: '#/components/schemas/DrsIds'
+          $ref: '#/components/schemas/Strings'
+          description: DRS IDs of objects required by the task.
         drs_uris:
-          $ref: '#/components/schemas/DrsUris'
+          $ref: '#/components/schemas/Uris'
+          description: |-
+            URIs of known DRS instances that objects may be read from
+            or written to.
         mode:
           description: |-
             Mode with which service combinations are ranked. Services
@@ -224,7 +205,9 @@ components:
         resource_requirements:
           $ref: '#/components/schemas/ResourceRequirements'
         tes_uris:
-          $ref: '#/components/schemas/TesUris'
+          $ref: '#/components/schemas/Uris'
+          description: |-
+            URIs of known TES instances that the task may be computed on.
       description: Request schema describing the endpoint's input.
     Response:
       required:
@@ -334,13 +317,24 @@ components:
           input_object_2: https://object-store-2.org/object-2
           input_object_3: https://object-store-3.org/object-3
         rank: 1
-    TesUris:
+    Strings:
       type: array
-      description: URIs of known TES instances that the task may be computed on.
+      description: A generic array of strings.
       example:
-      - https://tes-1.service
-      - https://tes-2.service
-      - https://tes-3.service
+      - string-1
+      - string-2
+      - string-3
+      items:
+        type: string
+      default: []
+    Uris:
+      type: array
+      description: An array of URIs.
+      example:
+      - https://url-1.info
+      - https://url-2.info
+      - https://url-3.info
       items:
         type: string
         format: uri
+      default: []

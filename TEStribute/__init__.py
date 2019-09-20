@@ -3,7 +3,7 @@ Exposes TEStribute main function rank_services()
 """
 import logging
 import os
-from typing import (Dict, Iterable, List, Mapping, Optional, Union)
+from typing import (Iterable, Mapping, Optional, Union)
 
 from TEStribute import models
 from TEStribute import rank_order
@@ -89,13 +89,13 @@ def rank_services(
         tes_uris=tes_uris,
     )
     request = models.Request(
-        drs_ids=models.DrsIds(drs_ids),
-        drs_uris=models.DrsUris(drs_uris),
+        drs_ids=drs_ids,
+        drs_uris=drs_uris,
         mode=mode,        
         resource_requirements=models.ResourceRequirements(
             **resource_requirements
         ),
-        tes_uris=models.TesUris(tes_uris),
+        tes_uris=tes_uris,
     )
 
     # Parse config file

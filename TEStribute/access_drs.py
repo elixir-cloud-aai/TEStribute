@@ -3,7 +3,7 @@ Functions that interact with the DRS service
 """
 from collections import defaultdict
 import logging
-from typing import (Dict, Optional)
+from typing import (Dict, Iterable, Optional)
 
 from bravado.exception import HTTPNotFound
 import drs_client
@@ -11,14 +11,14 @@ from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
 
 from TEStribute.errors import (ResourceUnavailableError)
-from TEStribute.models import (DrsIds, DrsUris, DrsObject)
+from TEStribute.models import DrsObject
 
 logger = logging.getLogger("TEStribute")
 
 
 def fetch_drs_objects_metadata(
-    drs_uris: DrsUris,
-    drs_ids: DrsIds,
+    drs_uris: Iterable[str],
+    drs_ids: Iterable[str],
     jwt: Optional[str] = None,
     check_results: bool = True,
     timeout: float = 3,
@@ -48,12 +48,12 @@ def fetch_drs_objects_metadata(
     result_dict = defaultdict(dict)
 
     # Iterate over DRS instances
-    for drs_uri in drs_uris.items:
+    for drs_uri in drs_uris:
 
         # Fetch object metadata at current DRS instance
         metadata = _fetch_drs_objects_metadata(
             uri=drs_uri,
-            *drs_ids.items,
+            *drs_ids,
             timeout=timeout,
         )
 
@@ -68,7 +68,7 @@ def fetch_drs_objects_metadata(
         if check_results:
 
             # Check availability of objects
-            for drs_id in drs_ids.items:
+            for drs_id in drs_ids:
                 if drs_id not in result_dict:
                     raise ResourceUnavailableError(
                         f"Object '{drs_id}' is not available at any of the " \

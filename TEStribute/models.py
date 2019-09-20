@@ -129,17 +129,6 @@ class Costs:
         self.currency = currency
 
 
-class DrsIds:
-    """
-    DRS IDs of objects required by the task.
-    """
-    def __init__(
-        self,
-        items: Iterable[str] = [],
-    ) -> None:
-        self.items = items
-
-
 class DrsObject:
     """
     Schema describing DRS object metadata and access methods.
@@ -171,17 +160,6 @@ class DrsObject:
         self.aliases = aliases
 
 
-class DrsUris:
-    """
-    URIs of known DRS instances that objects may be read from or written to.
-    """
-    def __init__(
-        self,
-        items: Iterable[str] = [],
-    ) -> None:
-        self.items = items
-
-
 class Duration:
     """
     Desctibes a duration with a given value and unit.
@@ -193,17 +171,6 @@ class Duration:
     ) -> None:
         self.duration = duration
         self.unit = unit
-
-
-class TesUris:
-    """
-    URIs of known TES instances that the task may be computed on.
-    """
-    def __init__(
-        self,
-        items: Iterable[str],
-    ) -> None:
-        self.items = items
 
 
 class Error:
@@ -262,9 +229,9 @@ class Request:
     def __init__(
         self,
         resource_requirements: ResourceRequirements,
-        tes_uris: TesUris,
-        drs_ids: DrsIds = DrsIds([]),
-        drs_uris: DrsUris = DrsUris([]),
+        tes_uris: Iterable[str],
+        drs_ids: Iterable[str] = [],
+        drs_uris: Iterable[str] = [],
         mode: Union[float, int, Mode, str] = 0.5,
     ) -> None:
         """
