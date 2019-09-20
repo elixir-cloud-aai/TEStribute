@@ -131,10 +131,47 @@ class Response:
         return uri_combinations
 
 
-    # TODO: Implement instance methods to compute all required data for response
-    # - compute distances
-    # - filter service combinations
-    # - compute cost estimates
-    # - compute time estimates
-    # - calculate ranks
-    # - randomize ranks
+    def get_distances(
+        self,
+    ) -> None:
+        """
+
+        """
+        pass
+
+
+    def filter_service_combinations(
+        self,
+    ) -> None:
+        """
+
+        """
+        pass
+
+
+    def estimate_costs(
+        self,
+    ) -> None:
+        """
+
+        """
+        pass
+
+
+    def estimate_times(
+        self,
+    ) -> None:
+        """
+
+        """
+        pass
+
+
+    def rank_combinations(
+        self,
+    ) -> None:
+        """
+
+        """
+        # TODO: shuffle combinations if mode is 'random'
+        pass

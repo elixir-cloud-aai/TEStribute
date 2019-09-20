@@ -122,7 +122,7 @@ def rank_services(
     )
 
     # Create Response object
-    logger.debug("=== OUTPUT ===")
+    logger.debug("=== INITIALIZE RESPONSE ===")
     response = rs.Response(
         request=request,
         timeout=config["timeout"],
@@ -133,119 +133,29 @@ def rank_services(
         **response.to_dict()
     )
 
-    # Return response
+    # Compute distances
+    response.get_distances()
+
+    # Filter service combinations
+    response.filter_service_combinations()
+
+    # Estimate costs
+    response.estimate_costs()
+
+    # Estimate total task time
+    response.estimate_times()
+
+    # Rank service combinations
+    response.rank_combinations()
+
+    # Return response object
+    log_yaml(
+        header="=== OUTPUT ===",
+        level=logging.DEBUG,
+        logger=logger,
+        **response.to_dict()
+    )
     return response
-
-
-#    # Get valid TES-DRS combinations
-#    # TODO: Use model/class for return object
-#    # TODO: Add to constructor of Response
-#    valid_service_combos = get_valid_service_combinations(
-#        task_info=tes_task_info,
-#        object_info=drs_object_info,
-#    )
-#
-#    # Compute distances
-#    # TODO: Add to constructor of Response
-#    tes_object_distances = estimate_distances(
-#        combinations=valid_service_combos,
-#    )
-#
-#    # Filter service combinations
-#    # TODO: Add to constructor of Service Combinations
-#
-#    # Compute cost estimates
-#    # TODO: Should be method of class ServiceCombinations
-#    if models.Mode["cost"].value <= request.mode < models.Mode["time"].value:
-#        tes_costs = estimate_costs(
-#            task_info=tes_task_info,
-#            object_info=drs_object_info,
-#            distances=tes_object_distances,
-#        )
-#    else: tes_costs = {}
-#
-#    # Compute time estimates
-#    # TODO: Should be method of class ServiceCombinations
-#    if models.Mode["cost"].value < request.mode <= models.Mode["time"].value:
-#        tes_times = estimate_times(
-#            task_info=tes_task_info,
-#            object_info=drs_object_info,
-#            distances=tes_object_distances,
-#        )
-#    else: tes_times = {}
-#    mode: float = float(request.mode)
-#    # Rank by costs/times
-#    # TODO: Should be method of class ServiceCombinations
-#    ranked_services = rank_order.cost_time(
-#        costs=tes_costs,
-#        times=tes_times,
-#        weight=request.mode,
-#    )
-#
-#    # Randomize ranks
-#    # TODO: Should be method of class ServiceCombinations
-#    if mode == models.Mode["random"].value:
-#        ranked_services = rank_order.randomize(
-#            uris=tes_uris,
-#            object_info=drs_object_info,
-#        )
-#    
-#    # Catch other run modes
-#    else:
-#        logger.critical(
-#            (
-#                "Task cannot be computed: no ranking function defined for "
-#                "mode: {mode}."
-#            ).format(mode=mode)
-#        )
-#        raise ValueError
-#
-#    # Log output
-#    log_yaml(
-#        header="=== RANKED SERVICES ===",
-#        level=logging.INFO,
-#        logger=logger,
-#        ranked_services=ranked_services,
-#    )
-#    
-#
-#    # MOVE TO OTHER MODULES & RE-FACTOR
-#    #>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#    # tes_info_drs will have all the drs costs & info for each TES
-#
-#    cost_order = sorted(tes_costs.items(), key=lambda x: x[1]["total_costs"])
-#    time_order = sorted(tes_task_info.items(), key=lambda x: x[1]["queue_time"]["duration"])
-#
-#    ranked_services = {uri: 0 for uri, val in cost_order}
-#
-#    # calculate the final rank on the basis of weight specified by mode
-#    for i in range(0, len(cost_order)):
-#        ranked_services[cost_order[i][0]] = ranked_services[cost_order[i][0]] + i*mode
-#        ranked_services[time_order[i][0]] = ranked_services[time_order[i][0]] + i*(1-mode)
-#
-#    ranked_services = sorted(ranked_services.items(), key=lambda item: item[1])
-#
-#    # construct final return object
-#    return_array_full = []
-#    rank = 1
-#    for i in ranked_services:
-#        return_dict = {}
-#
-#        return_dict["access_uris"] = {}
-#        return_dict["access_uris"]["tes_uri"] = i[0]
-#        for drs_id in drs_object_info.keys():
-#            return_dict["access_uris"][drs_id] = tes_info_drs[i[0]][drs_id][0]
-#        return_dict["cost_estimate"] = {
-#            "amount": tes_info_drs[i[0]]["total_costs"],
-#            "currency": tes_info_drs[i[0]]["currency"]
-#        }
-#        return_dict["time_estimate"] = tes_task_info[i[0]]["queue_time"]
-#        return_dict["rank"] = rank
-#        return_array_full.extend([return_dict])
-#        rank += 1
-#
-#    # Add warnings
-#    response = {"warnings": [], "service_combinations": return_array_full}
 
 
 # Executed when script is called from command line
