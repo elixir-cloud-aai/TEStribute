@@ -2,6 +2,11 @@
 """
 Object models for representing nested, dependent data structures.
 """
+# TODO: Rename 'costs_total' to 'costs_compute'
+# TODO: Rename 'drs_ids' to 'object_ids'
+# TODO: Implement changes suggested by Susheel
+# TODO: Implement "smart" filter for service combinations
+# TODO: Handle currencies and conversions
 from copy import deepcopy
 from itertools import product
 import logging
@@ -9,10 +14,7 @@ from socket import (gaierror, gethostbyname)
 from typing import (Dict, Iterable, List, Mapping, Set, Tuple)
 from urllib.parse import urlparse
 
-from ip2geotools.errors import InvalidRequestError
-
 from TEStribute.errors import ResourceUnavailableError
-from TEStribute.log import log_yaml
 from TEStribute.models import (
     AccessUris,
     Costs,
@@ -79,7 +81,7 @@ class Response:
                 object_sizes[drs_id].add(drs_object.size)
         for drs_id, sizes in object_sizes.items():
             if len(sizes) == 1:
-                self.object_sizes[drs_id] = list(sizes)[0]
+                self.object_sizes[drs_id] = int(list(sizes)[0])
             elif len(sizes) == 0:
                 warning = (
                     f"Services cannot be ranked. No size information for " \
@@ -287,8 +289,6 @@ class Response:
         """
 
         """
-        # TODO: put here some "smartness" to reduce execution time for
-        #       complex cases; implement later
         pass
 
 
@@ -296,13 +296,32 @@ class Response:
         self,
     ) -> None:
         """
-
+        Calculates object transfer costs and adds it to the compute costs to
+        calculate the total costs, then updates `cost_estimate` attribute in
+        `service_combinations`.
         """
-        pass        
         # Iterate over service combinations
-        # Get `total_costs` (rename!), `data_transfer_rate`
-        # Calculate transfer costs with object sizes and distances
-        # Sum `total costs` and transfer costs
+        for index in range(len(self.service_combinations)):
+
+            # Get TES URI of current service combination
+            tes_uri = self.service_combinations[index].access_uris.tes_uri
+            costs_transfer: float = 0
+            for object_id in self.request.drs_ids:
+
+                # Calculate transfer costs from object size, distance between
+                # TES and object and rate
+                costs_transfer += (
+                    self.object_sizes[object_id] *
+                    self.distances[index][object_id] *
+                    self.task_info[tes_uri].costs_data_transfer.amount /
+                    1e12
+                )
+
+            # Update cost estimate with sum of compute and transfer costs
+            self.service_combinations[index].cost_estimate.amount = (
+                self.task_info[tes_uri].costs_total.amount +
+                costs_transfer
+            )
 
 
     def estimate_times(
@@ -320,5 +339,5 @@ class Response:
         """
 
         """
-        # TODO: shuffle combinations if mode is 'random'
+        # Shuffle combinations if mode is 'random'
         pass
