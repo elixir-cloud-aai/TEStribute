@@ -1,6 +1,7 @@
 """
 Exposes TEStribute main function rank_services()
 """
+from itertools import accumulate
 import logging
 import os
 from typing import (Iterable, Mapping, Optional, Union)
@@ -135,6 +136,13 @@ def rank_services(
 
     # Compute distances
     response.get_distances()
+    log_yaml(
+        header="=== DISTANCES ===",
+        level=logging.DEBUG,
+        logger=logger,
+        distances_detailed=response.distances_full,
+        distances=response.distances,
+    )
 
     # Filter service combinations
     response.filter_service_combinations()

@@ -66,7 +66,7 @@ def log_yaml(
 
     # Log value
     if kwargs:
-        text = yaml.dump(
+        text = yaml.safe_dump(
             kwargs,
             allow_unicode=True,
             default_flow_style=False

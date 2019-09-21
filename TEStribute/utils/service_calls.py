@@ -8,9 +8,10 @@ Functions that interact with external services.
 # TODO: DRS client: Cross-check object checksums & sizes, raise exception if
 #       differ
 from collections import defaultdict
+from itertools import combinations
 import logging
 import socket
-from typing import (Dict, Iterable, List, Mapping, Optional)
+from typing import (Dict, Iterable, List, Optional, Tuple)
 
 from bravado.exception import HTTPNotFound
 import drs_client
@@ -342,57 +343,50 @@ def _fetch_tes_task_info(
     return task_info_obj
 
 
-def estimate_distances(
-    combinations: Mapping,
-) -> Dict:
-    """
-    """
-    return {}
-
-
 def ip_distance(
-    url1: str,
-    url2: str
-) -> Dict:
+    *args: str,
+) -> Dict[str, Dict]:
     """
-    :param ip1: string ip/url
-    :param ip2: string ip/url
+    :param *args: IP addresses of the form '8.8.8.8' without schema and
+            suffixes.
 
-    :return: a dict containing the locations of both input addresses &
-    the physical distance between them in km's
+    :return: A dictionary with a key for each IP address, pointing to a
+            dictionary containing city, region and country information for the
+            IP address, as well as a key "distances" pointing to a dictionary
+            indicating the distances, in kilometers, between all pairs of IPs,
+            with the tuple of IPs as the keys. IPs that cannot be located are
+            skipped from the resulting dictionary.
+    
+    :raises ValueError: No args were passed.
     """
-    # Convert domains to IPs
-    try:
-        ip1 = socket.gethostbyname(urlparse(url1).netloc)
-        ip2 = socket.gethostbyname(urlparse(url2).netloc)
-    except socket.gaierror:
-        raise
+    if not args:
+        raise ValueError("Expected at least one URI or IP address.")
 
     # Locate IPs
-    try:
-        ip1_loc = DbIpCity.get(ip1, api_key="free")
-        ip2_loc = DbIpCity.get(ip2, api_key="free")
-    except InvalidRequestError:
-        raise
+    ip_locs = {}
+    for ip in args:
+        try:
+            ip_locs[ip] = DbIpCity.get(ip, api_key="free")
+        except InvalidRequestError:
+            pass
 
-    # Prepare, log and return results
-    ret = {
-        "source": {
-            "city": ip1_loc.city,
-            "region": ip1_loc.region,
-            "country": ip1_loc.country
-        },
-        "destination": {
-            "city": ip2_loc.city,
-            "region": ip2_loc.region,
-            "country": ip2_loc.country
-        },
-        "distance": geodesic(
-            (ip1_loc.latitude, ip1_loc.longitude),
-            (ip2_loc.latitude, ip2_loc.longitude),
-        ).km,
-    }
-    logger.debug(
-        f"Distance calculation between {url1} and {url2}: {ret}"
-    )
-    return ret
+    # Compute distances
+    dist = {}
+    for keys in combinations(ip_locs.keys(), r=2):
+        dist[(keys[0], keys[1])] = geodesic(
+            (ip_locs[keys[0]].latitude, ip_locs[keys[0]].longitude),
+            (ip_locs[keys[1]].latitude, ip_locs[keys[1]].longitude),
+        ).km
+    
+    # Prepare results
+    res = {}
+    for key, value in ip_locs.items():
+        res[key] = {
+            "city": value.city,
+            "region": value.region,
+            "country": value.country,
+        }
+    res["distances"] = dist
+
+    # Return results
+    return res
