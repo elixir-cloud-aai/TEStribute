@@ -93,6 +93,14 @@ class AccessUrl:
         self.headers = headers
 
 
+    def to_dict(self) -> Dict:
+        """Return instance attributes as dictionary."""
+        return {
+            "url": self.url,
+            "headers": self.headers,
+        }
+
+
 class AccessMethod:
     """
     A method describing how an object can be accessed.
@@ -110,14 +118,32 @@ class AccessMethod:
         self.region = region
 
 
+    def to_dict(self) -> Dict:
+        """Return instance attributes as dictionary."""
+        return {
+            "type": self.type.value,
+            "access_url": self.access_url.to_dict(),
+            "access_id": self.access_id,
+            "region": self.region,
+        }
+
+
 class Checksum:
     def __init__(
         self,
         checksum: str,
         type: ChecksumType = ChecksumType.md5,
     ) -> None:
-        self.checksum = checksum,
-        self.type = type,
+        self.checksum = checksum
+        self.type = type
+
+
+    def to_dict(self) -> Dict:
+        """Return instance attributes as dictionary."""
+        return {
+            "checksum": self.checksum,
+            "type": self.type.value,
+        }
 
 
 class Costs:
@@ -172,6 +198,22 @@ class DrsObject:
         self.aliases = aliases
 
 
+    def to_dict(self) -> Dict:
+        """Return instance attributes as dictionary."""
+        return {
+            "id": self.id,
+            "size": self.size,
+            "created": self.created,
+            "checksums": [c.to_dict() for c in self.checksums],
+            "access_methods": [m.to_dict() for m in self.access_methods],
+            "name": self.name,
+            "updated": self.updated,
+            "version": self.version,
+            "mime_type": self.mime_type,
+            "description": self.description,
+            "aliases": self.aliases,
+        }
+
 class Duration:
     """
     Desctibes a duration with a given value and unit.
@@ -191,19 +233,6 @@ class Duration:
             "duration": self.duration,
             "unit": self.unit.value,
         }
-
-
-class Error:
-    """
-    An individual error message.
-    """
-    def __init__(
-        self,
-        message: str,
-        reason: str,
-    ) -> None:
-        self.message = message
-        self.reason = reason
 
 
 class ResourceRequirements:
@@ -237,21 +266,6 @@ class ResourceRequirements:
             "preemptible": self.preemptible,
             "zones": self.zones,
         }
-
-
-class ErrorResponse:
-    """
-    A response object for detailed error messages.
-    """
-    def __init__(
-        self,
-        code: int,
-        errors: Iterable[Error],
-        message: str,
-    ) -> None:
-        self.code = code
-        self.errors = errors
-        self.message = message
 
 
 class ServiceCombination:
@@ -303,3 +317,42 @@ class TaskInfo:
         self.costs_data_transfer = costs_data_transfer
         self.queue_time = queue_time
 
+
+    def to_dict(self) -> Dict:
+        """Return instance attributes as dictionary."""
+        return {
+            "costs_total": self.costs_total.to_dict(),
+            "costs_cpu_usage": self.costs_cpu_usage.to_dict(),
+            "costs_memory_consumption": self.costs_memory_consumption.to_dict(),
+            "costs_data_storage": self.costs_data_storage.to_dict(),
+            "costs_data_transfer": self.costs_data_transfer.to_dict(),
+            "queue_time": self.queue_time.to_dict(),
+        }
+
+
+class Error:
+    """
+    An individual error message.
+    """
+    def __init__(
+        self,
+        message: str,
+        reason: str,
+    ) -> None:
+        self.message = message
+        self.reason = reason
+
+
+class ErrorResponse:
+    """
+    A response object for detailed error messages.
+    """
+    def __init__(
+        self,
+        code: int,
+        errors: Iterable[Error],
+        message: str,
+    ) -> None:
+        self.code = code
+        self.errors = errors
+        self.message = message

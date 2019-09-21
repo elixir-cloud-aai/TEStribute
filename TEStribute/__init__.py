@@ -86,7 +86,7 @@ def rank_services(
     # Create Request object
     log_yaml(
         header="=== USER INPUT ===",
-        level=logging.DEBUG,
+        level=logging.INFO,
         logger=logger,
         drs_ids=drs_ids,
         drs_uris=drs_uris,
@@ -133,6 +133,28 @@ def rank_services(
         logger=logger,
         **response.to_dict()
     )
+    log_yaml(
+        header="=== TES TASK INFO ===",
+        level=logging.DEBUG,
+        logger=logger,
+        object_info={k: v.to_dict() for k, v in response.task_info.items()},
+    )
+    log_yaml(
+        header="=== DRS OBJECT INFO ===",
+        level=logging.DEBUG,
+        logger=logger,
+        object_info={
+            drs_id: {
+                key: metadata.to_dict() for key, metadata in service.items()
+            } for drs_id, service in response.object_info.items()
+        },
+    )
+    log_yaml(
+        header="=== OBJECT SIZES ===",
+        level=logging.DEBUG,
+        logger=logger,
+        object_info=response.object_sizes,
+    )
 
     # Compute distances
     response.get_distances()
@@ -159,7 +181,7 @@ def rank_services(
     # Return response object
     log_yaml(
         header="=== OUTPUT ===",
-        level=logging.DEBUG,
+        level=logging.INFO,
         logger=logger,
         **response.to_dict()
     )

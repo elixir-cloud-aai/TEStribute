@@ -42,9 +42,15 @@ class Response:
         request = rq.Request,
         timeout = float,
     ) -> None:
+        # Add warnings
+        self.warnings: List[str] = []
+
+        # Add request
+        self.request = request
+
         # Get TES task info for resource requirements
         try:
-            tes_task_info = fetch_tes_task_info(
+            self.task_info = fetch_tes_task_info(
                 tes_uris=request.tes_uris,
                 resource_requirements=request.resource_requirements,
                 jwt=request.jwt,
@@ -55,7 +61,7 @@ class Response:
 
         # Get metadata for DRS input objects
         try:
-            drs_object_info = fetch_drs_objects_metadata(
+            self.object_info = fetch_drs_objects_metadata(
                 drs_uris=request.drs_uris,
                 drs_ids=request.drs_ids,
                 jwt=request.jwt,
@@ -64,10 +70,37 @@ class Response:
         except ResourceUnavailableError:
             raise
 
+        # Determine object sizes
+        self.object_sizes: Dict[str, int] = {}
+        object_sizes: Dict[str, Set[int]] = {}
+        for drs_id, val in self.object_info.items():
+            object_sizes[drs_id] = set()
+            for drs_object in val.values():
+                object_sizes[drs_id].add(drs_object.size)
+        for drs_id, sizes in object_sizes.items():
+            if len(sizes) == 1:
+                self.object_sizes[drs_id] = list(sizes)[0]
+            elif len(sizes) == 0:
+                warning = (
+                    f"Services cannot be ranked. No size information for " \
+                    f"object '{drs_id}' available."
+                )
+                self.warnings.append(warning)
+                logger.error(warning)
+                raise ResourceUnavailableError
+            else:
+                warning = (
+                    f"Services cannot be ranked. Multiple sizes for the same " \
+                    f"object '{drs_id}' listed: {sizes}" \
+                )
+                self.warnings.append(warning)
+                logger.error(warning)
+                raise ResourceUnavailableError
+
         # Get combinations of access URIs for TES instances and objects
         self.access_uri_combinations = self.get_access_uri_combinations(
-            task_info=tes_task_info,
-            object_info=drs_object_info,
+            task_info=self.task_info,
+            object_info=self.object_info,
         )
 
         # Add service combinations
@@ -78,7 +111,7 @@ class Response:
                         access_uris=access_uris,
                         cost_estimate=Costs(
                             amount=-1,
-                            currency=Currency.BTC,
+                            currency=Currency.ARBITRARY,
                         ),
                         rank=-1,
                         time_estimate=Duration(
@@ -87,12 +120,6 @@ class Response:
                         ),
                     )
                 )
-
-        # Add warnings
-        self.warnings: List[str] = []
-
-        # Add request
-        self.request = request
 
 
     def to_dict(self) -> Dict:
@@ -271,7 +298,11 @@ class Response:
         """
 
         """
-        pass
+        pass        
+        # Iterate over service combinations
+        # Get `total_costs` (rename!), `data_transfer_rate`
+        # Calculate transfer costs with object sizes and distances
+        # Sum `total costs` and transfer costs
 
 
     def estimate_times(
