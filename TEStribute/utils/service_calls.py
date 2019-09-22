@@ -377,6 +377,7 @@ def ip_distance(
             (ip_locs[keys[0]].latitude, ip_locs[keys[0]].longitude),
             (ip_locs[keys[1]].latitude, ip_locs[keys[1]].longitude),
         ).km
+        dist[(keys[1], keys[0])] = dist[(keys[0], keys[1])]
     
     # Prepare results
     res = {}

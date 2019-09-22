@@ -177,6 +177,12 @@ def rank_services(
 
     # Rank service combinations
     response.rank_combinations()
+    log_yaml(
+        header="=== SCORES ===",
+        level=logging.DEBUG,
+        logger=logger,
+        scores=[str(i) for i in response.scores],
+    )
 
     # Return response object
     log_yaml(

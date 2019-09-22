@@ -1,4 +1,3 @@
-
 """
 Object models for representing nested, dependent data structures.
 """
@@ -10,6 +9,8 @@ Object models for representing nested, dependent data structures.
 from copy import deepcopy
 from itertools import product
 import logging
+import numpy as np
+from random import shuffle
 from socket import (gaierror, gethostbyname)
 from typing import (Dict, Iterable, List, Mapping, Set, Tuple)
 from urllib.parse import urlparse
@@ -122,13 +123,14 @@ class Response:
                         ),
                     )
                 )
+        self.service_combinations_sorted = self.service_combinations
 
 
     def to_dict(self) -> Dict:
         """Return instance attributes as dictionary."""
         return {
             "service_combinations": [
-                c.to_dict() for c in self.service_combinations
+                c.to_dict() for c in self.service_combinations_sorted
             ],
             "warnings": self.warnings,
         }
@@ -216,7 +218,7 @@ class Response:
                         obj_ip = gethostbyname(urlparse(uri).netloc)
                     except gaierror:
                         break
-                    ips[(index, key)] = frozenset([tes_ip, obj_ip])
+                    ips[(index, key)] = (tes_ip, obj_ip)
 
         # Create unique set of IP pairs
         ips_unique: Dict[Set[str], List[Tuple[int, str]]] = {
@@ -233,13 +235,13 @@ class Response:
             self.distances_full = ip_distance(*ips_all)
         except ValueError:
             pass
-        for ip_set in ips_unique.keys():
-            if len(ip_set) == 1:
-                distances_unique[ip_set] = 0
+        for ip_tuple in ips_unique.keys():
+            if len(set(ip_tuple)) == 1:
+                distances_unique[ip_tuple] = 0
             else:
                 try:
-                    distances_unique[ip_set] = \
-                        self.distances_full["distances"][tuple(ip_set)]
+                    distances_unique[ip_tuple] = \
+                        self.distances_full["distances"][ip_tuple]
                 except KeyError:
                     pass
 
@@ -297,8 +299,8 @@ class Response:
     ) -> None:
         """
         Calculates object transfer costs and adds it to the compute costs to
-        calculate the total costs, then updates `cost_estimate` attribute in
-        `service_combinations`.
+        calculate the total costs, then updates `cost_estimate` attribute of
+        `service_combinations` attribute.
         """
         # Iterate over service combinations
         for index in range(len(self.service_combinations)):
@@ -328,7 +330,9 @@ class Response:
         self,
     ) -> None:
         """
-
+        Updates `time_estimate` attribute of `service_combinations` attribute
+        with the sum of the estimated queue time and the specified task
+        execution time, in minutes.
         """
         # Iterate over service combinations
         for index in range(len(self.service_combinations)):
@@ -349,6 +353,8 @@ class Response:
                 queue_time +
                 self.request.resource_requirements.execution_time_min
             )
+            self.service_combinations[index].time_estimate.unit = \
+                TimeUnit.MINUTES
 
 
     def rank_combinations(
@@ -357,5 +363,43 @@ class Response:
         """
 
         """
-        # Shuffle combinations if mode is 'random'
-        pass
+        mode = self.request.mode_float
+        if mode >= 0:
+
+            # Get all time estimates
+            times = np.array([
+                combination.time_estimate.duration for combination in
+                self.service_combinations
+            ])
+
+            # Get all cost esimates
+            costs = np.array([
+                combination.cost_estimate.amount for combination in
+                self.service_combinations
+            ])
+
+            # Normalize and weight times & costs
+            times_weight = times / times[0] * mode
+            costs_weight = costs / costs[0] * (1 - mode)
+
+            # Calculate score
+            scores = times_weight + costs_weight
+
+            # Order scores
+            ranks = scores.argsort() + 1
+            self.ranks = ranks.tolist()
+
+            # Rank service combinations
+            for index in range(len(self.service_combinations)):
+                self.service_combinations[index].rank = self.ranks[index]
+            
+            # Add scores to instance attributes
+            self.scores = scores.tolist()
+
+            # Add sorted list of service combinations
+            self.service_combinations_sorted = sorted(
+                self.service_combinations, key=lambda k: k.rank
+            )
+
+        else:
+            shuffle(self.service_combinations_sorted)

@@ -50,6 +50,7 @@ mccabe==0.6.1
 monotonic==1.5
 more-itertools==7.2.0
 msgpack-python==0.5.6
+numpy==1.17.2
 openapi-spec-validator==0.2.8
 packaging==19.0
 pip-review==1.0
