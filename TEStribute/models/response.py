@@ -330,7 +330,25 @@ class Response:
         """
 
         """
-        pass
+        # Iterate over service combinations
+        for index in range(len(self.service_combinations)):
+
+            # Get TES URI of current service combination
+            tes_uri = self.service_combinations[index].access_uris.tes_uri
+
+            # Convert queue time
+            queue_time = self.task_info[tes_uri].queue_time.duration
+            time_unit = self.task_info[tes_uri].queue_time.unit
+            if time_unit.value == "SECONDS":
+                queue_time /= 60
+            elif time_unit.value == "HOURS":
+                queue_time *= 60
+
+            # Update cost estimate with sum of compute and transfer costs
+            self.service_combinations[index].time_estimate.duration = (
+                queue_time +
+                self.request.resource_requirements.execution_time_min
+            )
 
 
     def rank_combinations(
