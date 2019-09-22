@@ -1,27 +1,30 @@
-# Default TES instances
-tes_uris:
- - "http://131.152.229.70/ga4gh/tes/v1/"
- - "http://193.166.24.111/ga4gh/tes/v1/"
-
-# Default DRS instances
-drs_uris:
- - "http://131.152.229.71/ga4gh/drs/v1/"
- - "http://193.166.24.114/ga4gh/drs/v1/"
-
-# Default resources:
-resource_requirements:
- cpu_cores: 1
- ram_gb: 1
- disk_gb: 1
- execution_time_min: 30
-
-# Default input files:
-drs_ids:
- - "a001"
- - "a002"
-
-# Default mode:
-mode: 0.5
-
-# App settings
+# General app settings
 timeout: 0.5
+
+# Security settings
+security:
+    authorization_required: False
+    jwt:
+        auth_header_key: Authorization
+        claim_identity: sub
+        claim_issuer: iss
+        claim_key_id: kid
+        decode_algorithms:
+          - RS256
+        idp_config_jwks: jwks_uri
+        idp_config_url_suffix: /.well-known/openid-configuration
+        idp_config_userinfo: userinfo_endpoint
+        jwt_prefix: Bearer
+        validation_methods:  # available methods: 'userinfo', 'public_key'
+          - userinfo
+          - public_key
+
+# API service specs
+openapi:
+    TEStribute: specs/schema.TEStribute.openapi.yaml
+
+# API service settings
+server:
+    host: 0.0.0.0
+    port: 8080
+    debug: True

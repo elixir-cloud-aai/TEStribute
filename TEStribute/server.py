@@ -6,7 +6,7 @@ from shutil import copyfile
 
 from connexion import App
 
-from TEStribute.config.parse_config import config_parser
+from TEStribute.config import config_parser
 from TEStribute.errors import (register_error_handlers)
 from TEStribute.security.process_jwt import JWT
 
@@ -18,7 +18,7 @@ config = config_parser(
     os.path.abspath(
         os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            "config/server_config.yaml"
+            "config/config.yaml"
         )
     )
 )

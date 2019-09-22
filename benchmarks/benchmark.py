@@ -12,7 +12,7 @@ from bravado.exception import HTTPInternalServerError
 from drs_client import Client as drs_cli
 from tes_client import Client as tes_cli
 
-from TEStribute.log.logging_functions import log_yaml
+from TEStribute.log import log_yaml
 from TEStribute.log import setup_logger
 from TEStribute import rank_services
 

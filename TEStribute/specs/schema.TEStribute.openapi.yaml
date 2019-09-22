@@ -11,7 +11,7 @@ info:
 servers:
 - url: /
 paths:
-  /rank_services:
+  /rank-services:
     post:
       summary: |-
         Given lists of known GA4GH TES and DRS instances and a
@@ -21,7 +21,7 @@ paths:
         the latter separately for each input object. By passing a
         rank mode, service combinations are ranked either by
         increasing times, costs or combinations thereof.
-      operationId: RankServices
+      operationId: rank_services
       requestBody:
         description: |-
           Lists of GA4GH TES and DRS instances, task resource
@@ -59,10 +59,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-      x-openapi-router-controller: controllers.rank_services
+      x-openapi-router-controller: controllers
 components:
   schemas:
-    AccessURIs:
+    AccessUris:
       required:
       - tes_uri
       type: object
@@ -103,29 +103,6 @@ components:
       example:
         amount: 1000
         currency: BTC
-    DrsIds:
-      type: array
-      description: DRS IDs of objects required by the task.
-      example:
-      - object_id-1
-      - object_id-2
-      - object_id-3
-      items:
-        type: string
-      default: []
-    DrsUris:
-      type: array
-      description: |-
-        URIs of known DRS instances that objects may be read from
-        or written to.
-      example:
-      - https://drs-1.service
-      - https://drs-2.service
-      - https://drs-3.service
-      items:
-        type: string
-        format: uri
-      default: []
     Duration:
       required:
       - duration
@@ -194,9 +171,13 @@ components:
       type: object
       properties:
         drs_ids:
-          $ref: '#/components/schemas/DrsIds'
+          $ref: '#/components/schemas/Strings'
+          description: DRS IDs of objects required by the task.
         drs_uris:
-          $ref: '#/components/schemas/DrsUris'
+          $ref: '#/components/schemas/Uris'
+          description: |-
+            URIs of known DRS instances that objects may be read from
+            or written to.
         mode:
           description: |-
             Mode with which service combinations are ranked. Services
@@ -205,6 +186,7 @@ components:
             representing weights at which services are ranked entirely
             by cost and time, respectively. It is also possible to
             randomize rankings (specify 'random' or -1).
+          default: 0.5
           example: random
           oneOf:
           - maximum: 1
@@ -223,7 +205,9 @@ components:
         resource_requirements:
           $ref: '#/components/schemas/ResourceRequirements'
         tes_uris:
-          $ref: '#/components/schemas/TesUris'
+          $ref: '#/components/schemas/Uris'
+          description: |-
+            URIs of known TES instances that the task may be computed on.
       description: Request schema describing the endpoint's input.
     Response:
       required:
@@ -246,8 +230,7 @@ components:
           - TES https://tes-1.service could not be accessed
           items:
             type: string
-          default:
-          - []
+          default: []
       description: Response schema describing the endpoint's output.
     ResourceRequirements:
       required:
@@ -262,7 +245,7 @@ components:
           description: Requested number of CPUs.
           format: int64
         disk_gb:
-          type: integer
+          type: number
           description: Requested disk size in gigabytes (GB).
           format: double
         execution_time_min:
@@ -286,6 +269,8 @@ components:
           items:
             type: string
           default: []
+      description: |-
+        Resources requested by a task.
       example:
         cpu_cores: 1
         execution_time_min: 60
@@ -304,7 +289,7 @@ components:
       type: object
       properties:
         access_uris:
-          $ref: '#/components/schemas/AccessURIs'
+          $ref: '#/components/schemas/AccessUris'
         cost_estimate:
           $ref: '#/components/schemas/Costs'
         rank:
@@ -332,13 +317,24 @@ components:
           input_object_2: https://object-store-2.org/object-2
           input_object_3: https://object-store-3.org/object-3
         rank: 1
-    TesUris:
+    Strings:
       type: array
-      description: URIs of known TES instances that the task may be computed on.
+      description: A generic array of strings.
       example:
-      - https://tes-1.service
-      - https://tes-2.service
-      - https://tes-3.service
+      - string-1
+      - string-2
+      - string-3
+      items:
+        type: string
+      default: []
+    Uris:
+      type: array
+      description: An array of URIs.
+      example:
+      - https://url-1.info
+      - https://url-2.info
+      - https://url-3.info
       items:
         type: string
         format: uri
+      default: []

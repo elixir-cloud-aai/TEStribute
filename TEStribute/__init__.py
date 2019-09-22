@@ -1,19 +1,19 @@
 """
 Exposes TEStribute main function rank_services()
 """
+from itertools import accumulate
 import logging
 import os
-from typing import (List, Dict, Union)
+from typing import (Iterable, Mapping, Optional, Union)
 
-from TEStribute.access_drs import fetch_drs_objects_metadata
-from TEStribute.access_tes import fetch_tes_task_info
-from TEStribute.compute_costs import sum_costs
-from TEStribute.config.parse_config import config_parser
-from TEStribute.errors import ResourceUnavailableError
-from TEStribute.log.logging_functions import log_yaml
-from TEStribute.log import setup_logger
-from TEStribute.modes import Mode
-from TEStribute.validate_inputs import validate_input_parameters
+from werkzeug.exceptions import Unauthorized
+
+from TEStribute import models
+import TEStribute.models.request as rq
+import TEStribute.models.response as rs
+from TEStribute.config import config_parser
+from TEStribute.errors import ValidationError
+from TEStribute.log import (log_yaml, setup_logger)
 
 # Set up logging
 log_file = os.path.abspath(
@@ -23,13 +23,13 @@ logger = setup_logger("TEStribute", log_file, logging.DEBUG)
 
 
 def rank_services(
-    jwt: Union[None, str] = None,
-    drs_ids: Union[List, None] = None,
-    drs_uris: Union[List, None] = None,
-    mode: Union[float, int, Mode, None, str] = None,
-    resource_requirements: Union[Dict, None] = None,
-    tes_uris: Union[List, None] = None,
-) -> Dict[str, List]:
+    jwt: Optional[str] = None,
+    drs_ids: Iterable = [],
+    drs_uris: Iterable = [],
+    mode: Union[float, int, models.Mode, str] = 0.5,
+    resource_requirements: Mapping = {},
+    tes_uris: Iterable = [],
+) -> rs.Response:
     """
     Main function that returns a rank-ordered list of GA4GH TES and DRS
     services to use when submitting a TES task to decrease total costs and or
@@ -74,24 +74,8 @@ def rank_services(
                 }
             where [drs_id] entries are taken from parameter `drs_ids`.
     """
-    # Log user input
-    log_yaml(
-        header="=== USER INPUT ===",
-        level=logging.DEBUG,
-        logger=logger,
-        drs_ids=drs_ids,
-        drs_uris=drs_uris,
-        mode=mode,
-        resource_requirements=resource_requirements,
-        tes_uris=tes_uris,
-    )
-
     # Parse config file
-    log_yaml(
-        header="=== CONFIG ===",
-        level=logging.DEBUG,
-        logger=logger,
-    )
+    logger.debug("=== CONFIG ===")
     config = config_parser()
     log_yaml(
         level=logging.DEBUG,
@@ -99,33 +83,9 @@ def rank_services(
         config=config,
     )
 
-    # Set default values for missing input parameters, validate & sanitize
+    # Create Request object
     log_yaml(
-        header="=== VALIDATION ===",
-        level=logging.DEBUG,
-        logger=logger,
-    )
-    try:
-        (
-            drs_ids,
-            drs_uris,
-            mode,
-            resource_requirements,
-            tes_uris,
-        ) = validate_input_parameters(
-            defaults=config,
-            drs_ids=drs_ids,
-            drs_uris=drs_uris,
-            mode=mode,
-            resource_requirements=resource_requirements,
-            tes_uris=tes_uris,
-        )
-    except ResourceUnavailableError:
-        raise
-
-    # Log validated input parameters 
-    log_yaml(
-        header="=== VALIDATED INPUT PARAMETERS ===",
+        header="=== USER INPUT ===",
         level=logging.INFO,
         logger=logger,
         drs_ids=drs_ids,
@@ -134,103 +94,113 @@ def rank_services(
         resource_requirements=resource_requirements,
         tes_uris=tes_uris,
     )
-    
-    # Get metadata for input objects
-    if drs_ids is not None:
-        if drs_uris is None:
-            logger.error(
-                "No services for accesing input objects defined."
-            )
-            raise ResourceUnavailableError(
-                "No services for accesing input objects defined."
-            )
-        else:
-            try:
-                drs_object_info = fetch_drs_objects_metadata(
-                    drs_uris=drs_uris,
-                    drs_ids=drs_ids,
-                    timeout=config["timeout"]
-                )
-            except ResourceUnavailableError:
-                raise
-    else:
-        drs_object_info = dict()
-
-    # Get TES task info for resource requirements
-    if tes_uris is None:
-        logger.error(
-            "No execution services defined."
+    try:
+        request = rq.Request(
+            drs_ids=drs_ids,
+            drs_uris=drs_uris,
+            mode=mode,        
+            resource_requirements=models.ResourceRequirements(
+                **resource_requirements
+            ),
+            tes_uris=tes_uris,
+            authorization_required=config["security"]["authorization_required"],
+            jwt=jwt,
+            jwt_config=config["security"]["jwt"],
         )
-        raise ResourceUnavailableError(
-            "No execution services defined."
-        )
-    else:
-        try:
-            tes_task_info = fetch_tes_task_info(
-                tes_uris=tes_uris,
-                resource_requirements=resource_requirements,
-                timeout=config["timeout"]
-            )
-        except ResourceUnavailableError:
-            raise
+    except Unauthorized:
+        raise
 
-    # CHECK
-    #>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    # tes_info_drs will have all the drs costs & info for each TES
-    tes_info_drs = {}
-    for uri, info in tes_task_info.items():
-        # TODO : here the older values of each drs object's cost are overwitten
-        #  fix the updation, though the normal dicts are NOT overwritten
-        tes_info_drs.update({uri: sum_costs(
-            total_tes_costs=tes_task_info[uri]["costs_total"],
-            data_transfer_rate=info["costs_data_transfer"],
-            drs_objects_locations=drs_object_info,
-            tes_url=uri)
-        })
+    # Validate input parameters
+    logger.debug("=== VALIDATION ===")
+    try:
+        request.validate()
+    except ValidationError:
+        raise
+    log_yaml(
+        level=logging.DEBUG,
+        logger=logger,
+        **request.to_dict(),
+    )
 
-    cost_order = sorted(tes_info_drs.items(), key=lambda x: x[1]["total_costs"])
-    time_order = sorted(tes_task_info.items(), key=lambda x: x[1]["queue_time"]["duration"])
+    # Create Response object
+    logger.debug("=== INITIALIZE RESPONSE ===")
+    response = rs.Response(
+        request=request,
+        timeout=config["timeout"],
+    )
+    log_yaml(
+        level=logging.DEBUG,
+        logger=logger,
+        **response.to_dict()
+    )
+    log_yaml(
+        header="=== TES TASK INFO ===",
+        level=logging.DEBUG,
+        logger=logger,
+        object_info={k: v.to_dict() for k, v in response.task_info.items()},
+    )
+    log_yaml(
+        header="=== DRS OBJECT INFO ===",
+        level=logging.DEBUG,
+        logger=logger,
+        object_info={
+            drs_id: {
+                key: metadata.to_dict() for key, metadata in service.items()
+            } for drs_id, service in response.object_info.items()
+        },
+    )
+    log_yaml(
+        header="=== OBJECT SIZES ===",
+        level=logging.DEBUG,
+        logger=logger,
+        object_info=response.object_sizes,
+    )
 
-    rank_dict = {uri: 0 for uri, val in cost_order}
+    # Compute distances
+    response.get_distances()
+    log_yaml(
+        header="=== DISTANCES ===",
+        level=logging.DEBUG,
+        logger=logger,
+        distances_detailed=response.distances_full,
+        distances=response.distances,
+    )
 
-    # calculate the final rank on the basis of weight specified by mode
-    for i in range(0, len(cost_order)):
-        rank_dict[cost_order[i][0]] = rank_dict[cost_order[i][0]] + i*mode
-        rank_dict[time_order[i][0]] = rank_dict[time_order[i][0]] + i*(1-mode)
+    # Filter service combinations
+    response.filter_service_combinations()
 
-    rank_dict = sorted(rank_dict.items(), key=lambda item: item[1])
+    # Estimate costs
+    response.estimate_costs()
 
-    # construct final return object
-    return_array_full = []
-    rank = 1
-    for i in rank_dict:
-        return_dict = {}
+    # Estimate total task time
+    response.estimate_times()
 
-        return_dict["access_uris"] = {}
-        return_dict["access_uris"]["tes_uri"] = i[0]
-        for drs_id in drs_object_info.keys():
-            return_dict["access_uris"][drs_id] = tes_info_drs[i[0]][drs_id][0]
-        return_dict["cost_estimate"] = {
-            "amount": tes_info_drs[i[0]]["total_costs"],
-            "currency": tes_info_drs[i[0]]["currency"]
-        }
-        return_dict["time_estimate"] = tes_task_info[i[0]]["queue_time"]
-        return_dict["rank"] = rank
-        return_array_full.extend([return_dict])
-        rank += 1
+    # Rank service combinations
+    response.rank_combinations()
+    log_yaml(
+        header="=== SCORES ===",
+        level=logging.DEBUG,
+        logger=logger,
+        scores=[str(i) for i in response.scores],
+    )
 
-    # Add warnings
-    response = {"warnings": [], "service_combinations": return_array_full}
-
-    return response
-    #<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-
-if __name__ == "__main__":
-    ranking = rank_services()
+    # Return response object
     log_yaml(
         header="=== OUTPUT ===",
         level=logging.INFO,
         logger=logger,
-        ranking=ranking,
+        **response.to_dict()
     )
+    return response
+
+
+# Executed when script is called from command line
+if __name__ == "__main__":
+    response = rank_services()
+    log_yaml(
+        header="=== OUTPUT ===",
+        level=logging.INFO,
+        logger=logger,
+        ranking=response,
+    )
+    # TODO: Do something with response
