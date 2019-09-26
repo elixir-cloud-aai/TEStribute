@@ -5,8 +5,6 @@ Functions that interact with external services.
 # TODO: DRS and TES clients: implement class-based solution that validates
 #       responses against schemata
 # TODO: DRS and TES clients: Add authorization header to service calls
-# TODO: DRS client: Cross-check object checksums & sizes, raise exception if
-#       differ
 from collections import defaultdict
 from itertools import combinations
 import logging
@@ -58,7 +56,8 @@ def fetch_drs_objects_metadata(
     :param drs_ids: List (or other iterable object) of globally unique DRS
             identifiers.
     :param check_results: Check whether every object is available at least at
-            one DRS instance.
+            one DRS instance and whether objects across different DRS instances
+            have the same size and checksums.
     :param timeout: Time (in seconds) after which an unsuccessful connection
             attempt to the DRS should be terminated.
 
@@ -100,6 +99,38 @@ def fetch_drs_objects_metadata(
                         f"Object '{drs_id}' is not available at any of the " \
                         f"specified DRS instances."
                     )
+
+            # Check for consistency of object sizes
+            for drs_id, locations in result_dict.items():
+                obj_sizes: List[float] = []
+                for metadata in locations.values():
+                    obj_sizes.append(metadata.size)
+                if len(set(obj_sizes)) != 1:
+                    raise ResourceUnavailableError(
+                        f"Object '{drs_id}' has different sizes across " \
+                        f"different DRS instances: {set(obj_sizes)}"
+                    )
+
+            # Check for consistency of object checksums
+            for drs_id, locations in result_dict.items():
+                object_checksums: Dict[ChecksumType, List[str]] = {}
+                for metadata in locations.values():
+                    for checksum in metadata.checksums:
+                        if checksum.type in object_checksums:
+                            object_checksums[checksum.type].append(
+                                checksum.checksum
+                            )
+                        else:
+                            object_checksums[checksum.type] = [
+                                checksum.checksum
+                            ]
+                for t, c in object_checksums.items():
+                    if len(set(c)) != 1:
+                        raise ResourceUnavailableError(
+                            f"Object '{drs_id}' has different {t.value} " \
+                            f"checksums across different DRS instances: " \
+                            f"{set(c)}"
+                        )
 
         # Return results
     return result_dict
@@ -183,8 +214,9 @@ def _fetch_drs_objects_metadata(
                     region=access_method["region"],
                 )
             )
-        # Generate list of Checksums
         del metadata["access_methods"]
+    
+        # Generate list of Checksums
         checksums: List[Checksum] = []
         for checksum in metadata["checksums"]:
             checksums.append(
@@ -193,8 +225,9 @@ def _fetch_drs_objects_metadata(
                     type=ChecksumType(checksum["type"]),
                 )
             )
-        # Generate DrsObject
         del metadata["checksums"]
+
+        # Generate DrsObject
         objects_metadata[drs_id] = DrsObject(
             access_methods=access_methods,
             checksums=checksums,
