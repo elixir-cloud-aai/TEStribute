@@ -3,9 +3,9 @@ Object models for representing nested, dependent data structures.
 """
 # TODO: Rename 'costs_total' to 'costs_compute'
 # TODO: Rename 'drs_ids' to 'object_ids'
+# TODO: Rename "time"/"times" to "duration"?
 # TODO: Implement changes suggested by Susheel
 # TODO: Implement "smart" filter for service combinations
-# TODO: Handle currencies and conversions
 from copy import deepcopy
 from itertools import product
 import logging
