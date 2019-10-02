@@ -243,14 +243,14 @@ class ResourceRequirements:
         self,
         cpu_cores: int,
         disk_gb: float,
-        execution_time_min: int,
+        execution_time_sec: int,
         ram_gb: float,
         preemptible: bool = True,
         zones: Iterable[str] = [],
     ) -> None:
         self.cpu_cores = cpu_cores
         self.disk_gb = disk_gb
-        self.execution_time_min = execution_time_min
+        self.execution_time_sec = execution_time_sec
         self.ram_gb = ram_gb
         self.preemptible = preemptible
         self.zones = zones
@@ -261,7 +261,7 @@ class ResourceRequirements:
         return {
             "cpu_cores": self.cpu_cores,
             "disk_gb": self.disk_gb,
-            "execution_time_min": self.execution_time_min,
+            "execution_time_sec": self.execution_time_sec,
             "ram_gb": self.ram_gb,
             "preemptible": self.preemptible,
             "zones": self.zones,
