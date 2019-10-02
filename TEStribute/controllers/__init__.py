@@ -33,7 +33,7 @@ def rank_services(
     # Rank services
     try:
         return rank(
-            drs_ids=body.get("drs_ids"),
+            object_ids=body.get("object_ids"),
             drs_uris=body.get("drs_uris"),
             mode=body.get("mode"),
             resource_requirements=body.get("resource_requirements"),

@@ -168,7 +168,7 @@ components:
       - tes_uris
       type: object
       properties:
-        drs_ids:
+        object_ids:
           $ref: '#/components/schemas/Strings'
           description: DRS IDs of objects required by the task.
         drs_uris:

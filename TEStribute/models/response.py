@@ -1,7 +1,6 @@
 """
 Object models for representing nested, dependent data structures.
 """
-# TODO: Rename 'drs_ids' to 'object_ids'
 from copy import deepcopy
 from itertools import product
 import logging
@@ -60,7 +59,7 @@ class Response:
         try:
             self.object_info = fetch_drs_objects_metadata(
                 drs_uris=request.drs_uris,
-                drs_ids=request.drs_ids,
+                object_ids=request.drs_ids,
                 jwt=request.jwt,
                 timeout=timeout,
             )
