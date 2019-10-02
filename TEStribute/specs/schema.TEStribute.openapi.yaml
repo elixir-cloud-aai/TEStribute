@@ -7,7 +7,7 @@ info:
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
-  version: 0.1.0
+  version: 0.2.0
 servers:
 - url: /
 paths:
@@ -168,7 +168,7 @@ components:
       - tes_uris
       type: object
       properties:
-        drs_ids:
+        object_ids:
           $ref: '#/components/schemas/Strings'
           description: DRS IDs of objects required by the task.
         drs_uris:
@@ -179,8 +179,8 @@ components:
         mode:
           description: |-
             Mode with which service combinations are ranked. Services
-            can be ranked by either costs, time or both. For the latter,
-            specify a weight between 0 and 1, the boundaries
+            can be ranked by either 'cost', 'time' or both. For the latter,
+            specify a number between 0 and 1, with the boundaries
             representing weights at which services are ranked entirely
             by cost and time, respectively. It is also possible to
             randomize rankings (specify 'random' or -1).
@@ -248,7 +248,7 @@ components:
           format: double
         execution_time_sec:
           type: integer
-          description: Requested execution in minutes (min).
+          description: Requested execution time in seconds (s).
           format: int64
         preemptible:
           type: boolean

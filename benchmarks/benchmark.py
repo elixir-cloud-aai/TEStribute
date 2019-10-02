@@ -76,7 +76,7 @@ def setup_env(config_id: str):
         logger.info("No TES uris provided")
 
     return {
-        "drs_ids": setup_dict["drs_ids"],
+        "object_ids": setup_dict["object_ids"],
         "resource_requirements": setup_dict["resource_requirements"],
         "tes_uris": list(tes_uris.keys()),
         "drs_uris":list(drs_uris.keys()),

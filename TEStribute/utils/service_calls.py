@@ -38,7 +38,7 @@ logger = logging.getLogger("TEStribute")
 
 def fetch_drs_objects_metadata(
     drs_uris: Iterable[str],
-    drs_ids: Iterable[str],
+    object_ids: Iterable[str],
     jwt: Optional[str] = None,
     timeout: float = 3,
     check_results: bool = True,
@@ -49,7 +49,7 @@ def fetch_drs_objects_metadata(
 
     :param drs_uris: List (or other iterable object) of root URIs of DRS
             instances.
-    :param drs_ids: List (or other iterable object) of globally unique DRS
+    :param object_ids: List (or other iterable object) of globally unique DRS
             identifiers.
     :param check_results: Check whether every object is available at least at
             one DRS instance and whether objects across different DRS instances
@@ -57,7 +57,7 @@ def fetch_drs_objects_metadata(
     :param timeout: Time (in seconds) after which an unsuccessful connection
             attempt to the DRS should be terminated.
 
-    :return: Dict of dicts of DRS object identifers in `drs_ids` (keys outer
+    :return: Dict of dicts of DRS object identifers in `object_ids` (keys outer
             dictionary) and DRS root URIs in `drs_uris` (keys inner
             dictionaries) and a dictionary containing the information defined by
             the `Object` model of the DRS specification (values inner
@@ -68,12 +68,16 @@ def fetch_drs_objects_metadata(
     # Initialize results container
     result_dict = defaultdict(dict)
 
+    # Do not continue if no input objects specified
+    if not object_ids:
+        return result_dict
+
     # Iterate over DRS instances
     for drs_uri in drs_uris:
 
         # Fetch object metadata at current DRS instance
         metadata = _fetch_drs_objects_metadata(
-            *drs_ids,
+            *object_ids,
             uri=drs_uri,
             jwt=jwt,
             timeout=timeout,
@@ -81,35 +85,35 @@ def fetch_drs_objects_metadata(
 
         # Add metadata for each object to results container, if available
         if metadata:
-            for drs_id in metadata:
-                result_dict[drs_id].update({
-                    drs_uri: metadata[drs_id]
+            for object_id in metadata:
+                result_dict[object_id].update({
+                    drs_uri: metadata[object_id]
                 })
 
         # Check whether any object is unavailable
         if check_results:
 
             # Check availability of objects
-            for drs_id in drs_ids:
-                if drs_id not in result_dict:
+            for object_id in object_ids:
+                if object_id not in result_dict:
                     raise ResourceUnavailableError(
-                        f"Object '{drs_id}' is not available at any of the " \
-                        f"specified DRS instances."
+                        f"Object '{object_id}' is not available at any of " \
+                        f"the specified DRS instances."
                     )
 
             # Check for consistency of object sizes
-            for drs_id, locations in result_dict.items():
+            for object_id, locations in result_dict.items():
                 obj_sizes: List[float] = []
                 for metadata in locations.values():
                     obj_sizes.append(metadata.size)
                 if len(set(obj_sizes)) != 1:
                     raise ResourceUnavailableError(
-                        f"Object '{drs_id}' has different sizes across " \
+                        f"Object '{object_id}' has different sizes across " \
                         f"different DRS instances: {set(obj_sizes)}"
                     )
 
             # Check for consistency of object checksums
-            for drs_id, locations in result_dict.items():
+            for object_id, locations in result_dict.items():
                 object_checksums: Dict[ChecksumType, List[str]] = {}
                 for metadata in locations.values():
                     for checksum in metadata.checksums:
@@ -124,7 +128,7 @@ def fetch_drs_objects_metadata(
                 for t, c in object_checksums.items():
                     if len(set(c)) != 1:
                         raise ResourceUnavailableError(
-                            f"Object '{drs_id}' has different {t.value} " \
+                            f"Object '{object_id}' has different {t.value} " \
                             f"checksums across different DRS instances: " \
                             f"{set(c)}"
                         )
@@ -183,15 +187,15 @@ def _fetch_drs_objects_metadata(
         return {}
 
     # Fetch metadata for every object; handle exceptions
-    for drs_id in ids:
+    for object_id in ids:
         try:
             metadata = client.getObject(
-                object_id=drs_id,
+                object_id=object_id,
                 timeout=timeout,
             )._as_dict()
         except HTTPNotFound:
             logger.debug(
-                f"File '{drs_id}' is not available on DRS '{uri}'."
+                f"File '{object_id}' is not available on DRS '{uri}'."
             )
             continue
         except TimeoutError:
@@ -229,7 +233,7 @@ def _fetch_drs_objects_metadata(
         del metadata["checksums"]
 
         # Generate DrsObject
-        objects_metadata[drs_id] = DrsObject(
+        objects_metadata[object_id] = DrsObject(
             access_methods=access_methods,
             checksums=checksums,
             **metadata,

@@ -1,7 +1,6 @@
 """
 Exposes TEStribute main function rank_services()
 """
-from itertools import accumulate
 import logging
 import os
 from typing import (Iterable, Mapping, Optional, Union)
@@ -19,12 +18,13 @@ from TEStribute.log import (log_yaml, setup_logger)
 log_file = os.path.abspath(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "log", "testribute.log")
 )
+logging.captureWarnings(capture=True)
 logger = setup_logger("TEStribute", log_file, logging.DEBUG)
 
 
 def rank_services(
     jwt: Optional[str] = None,
-    drs_ids: Iterable = [],
+    object_ids: Iterable = [],
     drs_uris: Iterable = [],
     mode: Union[float, int, models.Mode, str] = 0.5,
     resource_requirements: Mapping = {},
@@ -38,11 +38,10 @@ def rank_services(
 
     :param jwt: JSON Web Token to be passed to any TES/DRS calls in order to
             ascertain whether the user has permissions to access service
-            specified in `drs_ids`, `tes_instances` and `drs_instances`, whether
-            there are particular constraints or special provisions in place that
-            apply to the user (e.g., custom
-            prices). Currently not implemented.
-    :param drs_ids: List of DRS identifiers of input files required for the
+            specified in `object_ids`, `tes_instances` and `drs_instances`,
+            whether there are particular constraints or special provisions in
+            place that apply to the user (e.g., custom prices).
+    :param object_ids: List of DRS identifiers of input files required for the
             task. Can be derived from `inputs` property of the `tesTask`
             model of the GA4GH Task Execution Service schema described here:
             https://github.com/ga4gh/task-execution-schemas/blob/develop/openapi/task_execution.swagger.yaml
@@ -67,12 +66,12 @@ def rank_services(
                 {
                     "rank": "integer",
                     "TES": "TES_URL",
-                    [drs_id]: "DRS_URL",
-                    [drs_id]: "DRS_URL",
+                    [object_id]: "DRS_URL",
+                    [object_id]: "DRS_URL",
                     ...
                     "output_files": "DRS_URL",
                 }
-            where [drs_id] entries are taken from parameter `drs_ids`.
+            where [object_id] entries are taken from parameter `object_ids`.
     """
     # Parse config file
     logger.debug("=== CONFIG ===")
@@ -88,7 +87,7 @@ def rank_services(
         header="=== USER INPUT ===",
         level=logging.INFO,
         logger=logger,
-        drs_ids=drs_ids,
+        object_ids=object_ids,
         drs_uris=drs_uris,
         mode=mode,
         resource_requirements=resource_requirements,
@@ -96,7 +95,7 @@ def rank_services(
     )
     try:
         request = rq.Request(
-            drs_ids=drs_ids,
+            object_ids=object_ids,
             drs_uris=drs_uris,
             mode=mode,        
             resource_requirements=models.ResourceRequirements(
@@ -144,9 +143,9 @@ def rank_services(
         level=logging.DEBUG,
         logger=logger,
         object_info={
-            drs_id: {
+            object_id: {
                 key: metadata.to_dict() for key, metadata in service.items()
-            } for drs_id, service in response.object_info.items()
+            } for object_id, service in response.object_info.items()
         },
     )
     log_yaml(

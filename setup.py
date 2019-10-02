@@ -7,10 +7,6 @@ with open("README.md", "r") as fh:
 
 # Read requirements from file
 install_requires = []
-# Alternatively, add only main requirements directly, *NOT* their
-# dependencies.
-# In any case it should be good to remove the GitHub installs and
-# upload packages to PyPI
 root_dir = os.path.dirname(os.path.realpath(__file__))
 req = root_dir + '/requirements.txt'
 if os.path.isfile(req):
@@ -18,17 +14,22 @@ if os.path.isfile(req):
         install_requires = f.read().splitlines()
 
 setup(
-    name="TEStribute",
-    version="0.1.0",
-    author="Elixir Europe",
+    name="testribute",
+    version="0.2.0",
+    author="ElIXIR Cloud & AAI",
     author_email="alexander.kanitz@alumni.ethz.ch",
-    description="LB for TES endpoints",
+    description="Task distribution for GA4GH TES instances",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="Apache License 2.0",
     url="https://github.com/elixir-europe/TEStribute",
     install_requires=install_requires,
+    python_requires='>=3.5',
     packages=find_packages(),
+    keywords=(
+        'ga4gh tes elixir rest api app openapi python'
+        'task distribution'
+    ),
     keywords=(),
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
@@ -38,6 +39,6 @@ setup(
         "Natural Language :: English",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
     ],
 )
-
