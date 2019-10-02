@@ -1,19 +1,17 @@
-drs_ids:
+object_ids:
 - a001
 - a002
 - a003
 tes_uris:
   http://131.152.229.70/ga4gh/tes/v1/:
-    currency: ARBITRARY
-    time_unit: MINUTES
+    currency: BTC
     unit_costs:
       cpu_usage: 1
       memory_consumption: 2
       data_storage: 3
       data_transfer: 4
   http://193.166.24.111/ga4gh/tes/v1/:
-    currency: ARBITRARY
-    time_unit: MINUTES
+    currency: BTC
     unit_costs:
       cpu_usage: 4
       memory_consumption: 3
@@ -104,7 +102,7 @@ drs_uris:
         - None
 resource_requirements:
   cpu_cores: '2'
-  execution_time_min: '300'
+  execution_time_sec: '300'
   preemptible: true
   ram_gb: '8'
   disk_gb: '10'

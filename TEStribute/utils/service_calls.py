@@ -8,8 +8,7 @@ Functions that interact with external services.
 from collections import defaultdict
 from itertools import combinations
 import logging
-import socket
-from typing import (Dict, Iterable, List, Optional, Tuple)
+from typing import (Dict, Iterable, List, Optional)
 
 from bravado.exception import HTTPNotFound
 import drs_client
@@ -19,7 +18,6 @@ from ip2geotools.errors import InvalidRequestError
 from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
 import tes_client
-from urllib.parse import urlparse
 
 from TEStribute.errors import ResourceUnavailableError
 from TEStribute.models import (
@@ -31,10 +29,8 @@ from TEStribute.models import (
     Costs,
     Currency,
     DrsObject,
-    Duration,
     ResourceRequirements,
     TaskInfo,
-    TimeUnit,
 )
 
 logger = logging.getLogger("TEStribute")
@@ -42,7 +38,7 @@ logger = logging.getLogger("TEStribute")
 
 def fetch_drs_objects_metadata(
     drs_uris: Iterable[str],
-    drs_ids: Iterable[str],
+    object_ids: Iterable[str],
     jwt: Optional[str] = None,
     timeout: float = 3,
     check_results: bool = True,
@@ -53,7 +49,7 @@ def fetch_drs_objects_metadata(
 
     :param drs_uris: List (or other iterable object) of root URIs of DRS
             instances.
-    :param drs_ids: List (or other iterable object) of globally unique DRS
+    :param object_ids: List (or other iterable object) of globally unique DRS
             identifiers.
     :param check_results: Check whether every object is available at least at
             one DRS instance and whether objects across different DRS instances
@@ -61,7 +57,7 @@ def fetch_drs_objects_metadata(
     :param timeout: Time (in seconds) after which an unsuccessful connection
             attempt to the DRS should be terminated.
 
-    :return: Dict of dicts of DRS object identifers in `drs_ids` (keys outer
+    :return: Dict of dicts of DRS object identifers in `object_ids` (keys outer
             dictionary) and DRS root URIs in `drs_uris` (keys inner
             dictionaries) and a dictionary containing the information defined by
             the `Object` model of the DRS specification (values inner
@@ -77,42 +73,43 @@ def fetch_drs_objects_metadata(
 
         # Fetch object metadata at current DRS instance
         metadata = _fetch_drs_objects_metadata(
-            *drs_ids,
+            *object_ids,
             uri=drs_uri,
+            jwt=jwt,
             timeout=timeout,
         )
 
         # Add metadata for each object to results container, if available
         if metadata:
-            for drs_id in metadata:
-                result_dict[drs_id].update({
-                    drs_uri: metadata[drs_id]
+            for object_id in metadata:
+                result_dict[object_id].update({
+                    drs_uri: metadata[object_id]
                 })
 
         # Check whether any object is unavailable
         if check_results:
 
             # Check availability of objects
-            for drs_id in drs_ids:
-                if drs_id not in result_dict:
+            for object_id in object_ids:
+                if object_id not in result_dict:
                     raise ResourceUnavailableError(
-                        f"Object '{drs_id}' is not available at any of the " \
-                        f"specified DRS instances."
+                        f"Object '{object_id}' is not available at any of " \
+                        f"the specified DRS instances."
                     )
 
             # Check for consistency of object sizes
-            for drs_id, locations in result_dict.items():
+            for object_id, locations in result_dict.items():
                 obj_sizes: List[float] = []
                 for metadata in locations.values():
                     obj_sizes.append(metadata.size)
                 if len(set(obj_sizes)) != 1:
                     raise ResourceUnavailableError(
-                        f"Object '{drs_id}' has different sizes across " \
+                        f"Object '{object_id}' has different sizes across " \
                         f"different DRS instances: {set(obj_sizes)}"
                     )
 
             # Check for consistency of object checksums
-            for drs_id, locations in result_dict.items():
+            for object_id, locations in result_dict.items():
                 object_checksums: Dict[ChecksumType, List[str]] = {}
                 for metadata in locations.values():
                     for checksum in metadata.checksums:
@@ -127,7 +124,7 @@ def fetch_drs_objects_metadata(
                 for t, c in object_checksums.items():
                     if len(set(c)) != 1:
                         raise ResourceUnavailableError(
-                            f"Object '{drs_id}' has different {t.value} " \
+                            f"Object '{object_id}' has different {t.value} " \
                             f"checksums across different DRS instances: " \
                             f"{set(c)}"
                         )
@@ -139,6 +136,7 @@ def fetch_drs_objects_metadata(
 def _fetch_drs_objects_metadata(
     *ids: str,
     uri: str,
+    jwt: Optional[str] = None,
     timeout: float = 3,
 ) -> Dict[str, DrsObject]:
     """
@@ -162,7 +160,10 @@ def _fetch_drs_objects_metadata(
 
     # Establish connection with DRS; handle exceptions
     try:
-        client = drs_client.Client(uri)
+        client = drs_client.Client(
+            url=uri,
+            jwt=jwt,
+        )
     except TimeoutError:
         logger.warning(
             f"DRS unavailable: connection attempt to DRS '{uri}' timed out."
@@ -182,15 +183,15 @@ def _fetch_drs_objects_metadata(
         return {}
 
     # Fetch metadata for every object; handle exceptions
-    for drs_id in ids:
+    for object_id in ids:
         try:
             metadata = client.getObject(
-                object_id=drs_id,
+                object_id=object_id,
                 timeout=timeout,
             )._as_dict()
         except HTTPNotFound:
             logger.debug(
-                f"File '{drs_id}' is not available on DRS '{uri}'."
+                f"File '{object_id}' is not available on DRS '{uri}'."
             )
             continue
         except TimeoutError:
@@ -228,7 +229,7 @@ def _fetch_drs_objects_metadata(
         del metadata["checksums"]
 
         # Generate DrsObject
-        objects_metadata[drs_id] = DrsObject(
+        objects_metadata[object_id] = DrsObject(
             access_methods=access_methods,
             checksums=checksums,
             **metadata,
@@ -275,6 +276,7 @@ def fetch_tes_task_info(
         task_info = _fetch_tes_task_info(
             uri=uri,
             resource_requirements=resource_requirements,
+            jwt=jwt,
             timeout=timeout,
         )
 
@@ -295,6 +297,7 @@ def fetch_tes_task_info(
 def _fetch_tes_task_info(
     uri: str,
     resource_requirements: ResourceRequirements,
+    jwt: Optional[str] = None,
     timeout: float = 3,
 ) -> Optional[TaskInfo]:
     """
@@ -316,7 +319,10 @@ def _fetch_tes_task_info(
     """
     # Establish connection with TES; handle exceptions
     try:
-        client = tes_client.Client(uri)
+        client = tes_client.Client(
+            url=uri,
+            jwt=jwt
+        )
     except TimeoutError:
         logger.warning(
             f"TES unavailable: connection attempt to '{uri}' timed out."
@@ -344,31 +350,18 @@ def _fetch_tes_task_info(
 
     # Generate TaskInfo object
     task_info_obj = TaskInfo(
-        costs_total=Costs(
-            amount=task_info["costs_total"]["amount"],
-            currency=Currency(task_info["costs_total"]["currency"]),
+        estimated_compute_costs=Costs(
+            amount=task_info["estimated_compute_costs"]["amount"],
+            currency=Currency(task_info["estimated_compute_costs"]["currency"]),
         ),
-        costs_cpu_usage=Costs(
-            amount=task_info["costs_cpu_usage"]["amount"],
-            currency=Currency(task_info["costs_cpu_usage"]["currency"]),
+        estimated_storage_costs= Costs(
+            amount=task_info["estimated_storage_costs"]["amount"],
+            currency=Currency(task_info["estimated_storage_costs"]["currency"]),
         ),
-        costs_memory_consumption= Costs(
-            amount=task_info["costs_memory_consumption"]["amount"],
-            currency=Currency(
-                task_info["costs_memory_consumption"]["currency"]
-            ),
-        ),
-        costs_data_storage= Costs(
-            amount=task_info["costs_data_storage"]["amount"],
-            currency=Currency(task_info["costs_data_storage"]["currency"]),
-        ),
-        costs_data_transfer=Costs(
-            amount=task_info["costs_data_transfer"]["amount"],
-            currency=Currency(task_info["costs_data_transfer"]["currency"]),
-        ),
-        queue_time=Duration(
-            duration=task_info["queue_time"]["duration"],
-            unit=TimeUnit(task_info["queue_time"]["unit"]),
+        estimated_queue_time_sec=task_info["estimated_queue_time_sec"],
+        unit_costs_data_transfer=Costs(
+            amount=task_info["unit_costs_data_transfer"]["amount"],
+            currency=Currency(task_info["unit_costs_data_transfer"]["currency"]),
         ),
     )
 

@@ -1,11 +1,6 @@
 """
 Object models for representing nested, dependent data structures.
 """
-# TODO: Rename 'costs_total' to 'costs_compute'
-# TODO: Rename 'drs_ids' to 'object_ids'
-# TODO: Rename "time"/"times" to "duration"?
-# TODO: Implement changes suggested by Susheel
-# TODO: Implement "smart" filter for service combinations
 from copy import deepcopy
 from itertools import product
 import logging
@@ -20,11 +15,9 @@ from TEStribute.models import (
     AccessUris,
     Costs,
     Currency,
-    Duration,
     DrsObject,
     ServiceCombination,
     TaskInfo,
-    TimeUnit,
 )
 import TEStribute.models.request as rq
 from TEStribute.utils.service_calls import (
@@ -66,7 +59,7 @@ class Response:
         try:
             self.object_info = fetch_drs_objects_metadata(
                 drs_uris=request.drs_uris,
-                drs_ids=request.drs_ids,
+                object_ids=request.drs_ids,
                 jwt=request.jwt,
                 timeout=timeout,
             )
@@ -114,13 +107,10 @@ class Response:
                         access_uris=access_uris,
                         cost_estimate=Costs(
                             amount=-1,
-                            currency=Currency.ARBITRARY,
+                            currency=Currency.BTC,
                         ),
                         rank=-1,
-                        time_estimate=Duration(
-                            duration=-1,
-                            unit=TimeUnit.SECONDS,
-                        ),
+                        time_estimate=-1,
                     )
                 )
         self.service_combinations_sorted = self.service_combinations
@@ -202,8 +192,9 @@ class Response:
         """
         # Create pair of TES IP and object IP for each object and each access
         # URI combination
+        #combinations = [c.to_dict() for c in self.access_uri_combinations]
         combinations = [c.to_dict() for c in self.access_uri_combinations]
-        ips: Dict[Tuple[int, str], Set[str]] = {}
+        ips = {}
         for index in range(len(combinations)):
             try:
                 tes_domain = urlparse(combinations[index]["tes_uri"]).netloc
@@ -315,13 +306,15 @@ class Response:
                 costs_transfer += (
                     self.object_sizes[object_id] *
                     self.distances[index][object_id] *
-                    self.task_info[tes_uri].costs_data_transfer.amount /
+                    self.task_info[tes_uri].unit_costs_data_transfer.amount /
                     1e12
                 )
 
-            # Update cost estimate with sum of compute and transfer costs
+            # Update cost estimate with sum of compute, storage and transfer
+            # costs
             self.service_combinations[index].cost_estimate.amount = (
-                self.task_info[tes_uri].costs_total.amount +
+                self.task_info[tes_uri].estimated_compute_costs.amount +
+                self.task_info[tes_uri].estimated_storage_costs.amount +
                 costs_transfer
             )
 
@@ -340,21 +333,11 @@ class Response:
             # Get TES URI of current service combination
             tes_uri = self.service_combinations[index].access_uris.tes_uri
 
-            # Convert queue time
-            queue_time = self.task_info[tes_uri].queue_time.duration
-            time_unit = self.task_info[tes_uri].queue_time.unit
-            if time_unit.value == "SECONDS":
-                queue_time /= 60
-            elif time_unit.value == "HOURS":
-                queue_time *= 60
-
-            # Update cost estimate with sum of compute and transfer costs
-            self.service_combinations[index].time_estimate.duration = (
-                queue_time +
-                self.request.resource_requirements.execution_time_min
+            # Update time estimate with sum of queue and execution time
+            self.service_combinations[index].time_estimate = (
+                self.task_info[tes_uri].estimated_queue_time_sec +
+                self.request.resource_requirements.execution_time_sec
             )
-            self.service_combinations[index].time_estimate.unit = \
-                TimeUnit.MINUTES
 
 
     def rank_combinations(
@@ -368,7 +351,7 @@ class Response:
 
             # Get all time estimates
             times = np.array([
-                combination.time_estimate.duration for combination in
+                combination.time_estimate for combination in
                 self.service_combinations
             ])
 

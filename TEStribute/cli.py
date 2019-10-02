@@ -15,7 +15,7 @@ parser.add_argument("-m", "--mode",
                      default=0.5)
 
 # Specify required arguments
-requiredArgument.add_argument("-drs_ids", "--DRS_IDS",
+requiredArgument.add_argument("-object_ids", "--OBJECT_IDS",
                                 nargs="+",
                                 help="List of DRS identifiers of input files required for the task",
                                 required=True)
@@ -54,7 +54,7 @@ requiredArgument.add_argument("-drs_uris", "--DRS_URIS",
 #       configure an action send rank_services call
  
 # sample reading arguments
-arguments = parser.parse_args(["-drs_ids","a001","a002",
+arguments = parser.parse_args(["-object_ids","a001","a002",
                                "-drs_uris","http://131.152.229.71/ga4gh/drs/v1/","http://193.166.24.114/ga4gh/drs/v1/",
                                "-tes_uris","http://131.152.229.70/ga4gh/tes/v1/","http://193.166.24.111/ga4gh/tes/v1/",
                                "-cpu_cores","1",
@@ -65,7 +65,7 @@ arguments = parser.parse_args(["-drs_ids","a001","a002",
 
 # sample of rank_servives call
 rank_services(mode=arguments.mode,
-              drs_ids=arguments.DRS_IDS,
+              object_ids=arguments.OBJECT_IDS,
               drs_uris=arguments.DRS_URIS,
               tes_uris=arguments.TES_URIS,
               resource_requirements= {"cpu_cores":arguments.CPU_CORES,

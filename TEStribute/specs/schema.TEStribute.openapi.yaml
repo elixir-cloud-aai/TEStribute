@@ -95,33 +95,31 @@ components:
           description: Currency/unit.
           format: currency
           enum:
-          - ARBITRARY
-          - BTC
-          - EUR
-          - USD
+            - AUD
+            - BRL
+            - BTC
+            - CAD
+            - CHF
+            - CNH
+            - EUR
+            - GBP
+            - HKD
+            - INR
+            - KRW
+            - JPY
+            - MXN
+            - NOK
+            - NZD
+            - RUB
+            - SEK
+            - SGD
+            - TRY
+            - USD
+            - ZAR
       description: Describes costs with a given value and currency.
       example:
         amount: 1000
         currency: BTC
-    Duration:
-      required:
-      - duration
-      - unit
-      type: object
-      properties:
-        duration:
-          type: integer
-        unit:
-          type: string
-          description: Unit of time
-          enum:
-          - SECONDS
-          - MINUTES
-          - HOURS
-      description: Desctibes a duration with a given value and unit.
-      example:
-        duration: 5
-        unit: MINUTES
     Error:
       required:
       - message
@@ -170,7 +168,7 @@ components:
       - tes_uris
       type: object
       properties:
-        drs_ids:
+        object_ids:
           $ref: '#/components/schemas/Strings'
           description: DRS IDs of objects required by the task.
         drs_uris:
@@ -227,7 +225,7 @@ components:
           example:
           - DRS https://drs-1.service could not be accessed.
           - DRS https://drs-2.service could not be accessed.
-          - TES https://tes-1.service could not be accessed
+          - TES https://tes-1.service could not be accessed.
           items:
             type: string
           default: []
@@ -236,7 +234,7 @@ components:
       required:
       - cpu_cores
       - disk_gb
-      - execution_time_min
+      - execution_time_sec
       - ram_gb
       type: object
       properties:
@@ -248,7 +246,7 @@ components:
           type: number
           description: Requested disk size in gigabytes (GB).
           format: double
-        execution_time_min:
+        execution_time_sec:
           type: integer
           description: Requested execution in minutes (min).
           format: int64
@@ -273,7 +271,7 @@ components:
         Resources requested by a task.
       example:
         cpu_cores: 1
-        execution_time_min: 60
+        execution_time_sec: 60
         preemptible: true
         ram_gb: 4
         disk_gb: 1
@@ -300,14 +298,15 @@ components:
           format: int64
           example: 1
         time_estimate:
-          $ref: '#/components/schemas/Duration'
+          type: number
+          description: |-
+            Time estimated for the task to be completed, in seconds (s).
+          format: double
       description: |-
         A combination of TES and input DRS object access URIs
         together with cost/time estimates and a rank.
       example:
-        time_estimate:
-          duration: 5
-          unit: MINUTES
+        time_estimate: 300
         cost_estimate:
           amount: 1000
           currency: BTC

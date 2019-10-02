@@ -123,7 +123,7 @@ ways of running `TEStribute` with different arguments:
 When [importing](#From-a-Python-module) `TEStribute`, pass any desired arguments
 to the `rank_services()` function, which defines the following parameters:
 
-* **`drs_ids`**: List of DRS identifiers of input files required for the task.
+* **`object_ids`**: List of DRS identifiers of input files required for the task.
   Can be derived from `inputs` property of the `tesTask` model of the [GA4GH]
   [Task Execution Service] schema described here.
 * **`resource_requirements`**: Dictionary of resources required for the task.
@@ -163,7 +163,7 @@ to the `rank_services()` function, which defines the following parameters:
 
 ```json
 {
-  "drs_ids": [
+  "object_ids": [
     "a001",
     "a002"
   ],
@@ -175,7 +175,7 @@ to the `rank_services()` function, which defines the following parameters:
   "resource_requirements": {
     "cpu_cores": 1,
     "disk_gb": 1,
-    "execution_time_min": 30,
+    "execution_time_sec": 30,
     "ram_gb": 1
   },
   "tes_uris": [
@@ -199,7 +199,7 @@ defined in the [config] file.
 from TEStribute import rank_services()
 
 rank_services(
-    drs_ids=[
+    object_ids=[
         "a001",
         "a002"
     ],
@@ -207,7 +207,7 @@ rank_services(
         "cpu_cores": 1,
         "ram_gb": 1,
         "disk_gb": 1,
-        "execution_time_min": 30
+        "execution_time_sec": 30
     },
     tes_uris=[
         "http://131.152.229.70/ga4gh/tes/v1/",
@@ -234,14 +234,14 @@ The function returns an ordered list of dictionaries of the form:
 {
     "rank": "integer",
     "TES": "TES_URL",
-    drs_id_1: "DRS_URL",
-    drs_id_2: "DRS_URL",
+    object_id_1: "DRS_URL",
+    object_id_2: "DRS_URL",
     ...
     "output_files": "DRS_URL",
 }
 ```
 
-where `[drs_id]` entries are taken from parameter `drs_ids`.
+where `[object_id]` entries are taken from parameter `object_ids`.
 
 ### Modify the configuration file
 

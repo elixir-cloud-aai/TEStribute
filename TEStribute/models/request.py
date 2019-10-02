@@ -22,7 +22,7 @@ class Request:
         self,
         resource_requirements: ResourceRequirements,
         tes_uris: Iterable[str],
-        drs_ids: Iterable[str] = [],
+        object_ids: Iterable[str] = [],
         drs_uris: Iterable[str] = [],
         mode: Union[float, int, Mode, str] = 0.5,
         authorization_required: bool = False,
@@ -38,7 +38,7 @@ class Request:
                 Note that the `preemptible` and `zones` properties are currently
                 not used.
         :param tes_uris: List of root URIs to known TES instances.
-        :param drs_ids: List of DRS identifiers of input files required for the
+        :param object_ids: List of DRS identifiers of input files required for the
                 task. Can be derived from `inputs` property of the `tesTask`
                 model of the GA4GH Task Execution Service schema described here:
                 https://github.com/ga4gh/task-execution-schemas/blob/develop/openapi/task_execution.swagger.yaml
@@ -65,7 +65,7 @@ class Request:
         self.jwt = jwt
         self.resource_requirements = resource_requirements
         self.tes_uris = tes_uris
-        self.drs_ids = drs_ids
+        self.object_ids = object_ids
         self.drs_uris = drs_uris
         self.mode = mode
         self.mode_float: float = -1000
@@ -76,7 +76,7 @@ class Request:
         return {
             "resource_requirements": self.resource_requirements.to_dict(),
             "tes_uris": self.tes_uris,
-            "drs_ids": self.drs_ids,
+            "object_ids": self.object_ids,
             "drs_uris": self.drs_uris,
             "mode": self.mode,
             "mode_float": self.mode_float,
@@ -102,7 +102,7 @@ class Request:
 
         # If DRS objects have been passed, at least one DRS instance has to be
         # available
-        if self.drs_ids and not self.drs_uris: 
+        if self.object_ids and not self.drs_uris: 
             raise ValidationError(
                 "No services for accesing input objects defined."
             )
