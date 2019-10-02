@@ -59,7 +59,7 @@ class Response:
         try:
             self.object_info = fetch_drs_objects_metadata(
                 drs_uris=request.drs_uris,
-                object_ids=request.drs_ids,
+                object_ids=request.object_ids,
                 jwt=request.jwt,
                 timeout=timeout,
             )
@@ -190,9 +190,15 @@ class Response:
         indicated for key `total` is the sum of distances between TES and
         each of the objects (here: `obj1` and `obj2`).
         """
+        self.distances_full: Dict[str, Dict] = {}
+        self.distances: List[Dict[str, float]] = []
+
+        # Do not continue if no input object metadata available
+        if not self.object_info:
+            return None
+
         # Create pair of TES IP and object IP for each object and each access
         # URI combination
-        #combinations = [c.to_dict() for c in self.access_uri_combinations]
         combinations = [c.to_dict() for c in self.access_uri_combinations]
         ips = {}
         for index in range(len(combinations)):
@@ -220,7 +226,6 @@ class Response:
 
         # Calculate distances between all IPs
         distances_unique: Dict[Set[str], float] = {}
-        self.distances_full: Dict[str, Dict] = {}
         ips_all = frozenset().union(*list(ips_unique.keys()))
         try:
             self.distances_full = ip_distance(*ips_all)
@@ -245,7 +250,7 @@ class Response:
         )
 
         # Map distances back to each access URI combination
-        self.distances: List[Dict[str, float]] = [
+        self.distances = [
             deepcopy({}) for i in range(len(self.access_uri_combinations))
         ]
         for ip_set, combinations in ips_unique.items():
@@ -259,7 +264,7 @@ class Response:
         # Check for and remove service combinations for which no distances
         # are available
         for index in reversed(range(len(self.distances))):
-            if len(self.distances[index]) != len(self.request.drs_uris):
+            if len(self.distances[index]) != len(self.request.object_ids):
                 warning = (
                     f"The following service combination was removed because " \
                     f"no or not all distances could be computed: " \
@@ -280,9 +285,12 @@ class Response:
         self,
     ) -> None:
         """
-
         """
-        pass
+        # Ensure that there are any service combinations left
+        if not self.service_combinations:
+            raise ResourceUnavailableError(
+                "No valid service combinations available."
+            )
 
 
     def estimate_costs(
@@ -299,7 +307,7 @@ class Response:
             # Get TES URI of current service combination
             tes_uri = self.service_combinations[index].access_uris.tes_uri
             costs_transfer: float = 0
-            for object_id in self.request.drs_ids:
+            for object_id in self.request.object_ids:
 
                 # Calculate transfer costs from object size, distance between
                 # TES and object and rate
@@ -344,11 +352,13 @@ class Response:
         self,
     ) -> None:
         """
-
         """
+        # Get mode
         mode = self.request.mode_float
-        if mode >= 0:
 
+        # Calculate scores and ranks
+        if mode >= 0:
+        
             # Get all time estimates
             times = np.array([
                 combination.time_estimate for combination in
@@ -371,18 +381,23 @@ class Response:
             # Order scores
             ranks = scores.argsort() + 1
             self.ranks = ranks.tolist()
-
-            # Rank service combinations
-            for index in range(len(self.service_combinations)):
-                self.service_combinations[index].rank = self.ranks[index]
-            
+        
             # Add scores to instance attributes
             self.scores = scores.tolist()
 
-            # Add sorted list of service combinations
-            self.service_combinations_sorted = sorted(
-                self.service_combinations, key=lambda k: k.rank
-            )
-
+        # Shuffle ranks and set scores to -1 (for mode 'random')
         else:
-            shuffle(self.service_combinations_sorted)
+            self.scores = [-1 for i in self.service_combinations]
+            self.ranks = list(
+                range(1, len(self.service_combinations) + 1)
+            )
+            shuffle(self.ranks)
+
+        # Rank service combinations
+        for index in range(len(self.service_combinations)):
+            self.service_combinations[index].rank = self.ranks[index]
+        
+        # Add sorted list of service combinations
+        self.service_combinations_sorted = sorted(
+            self.service_combinations, key=lambda k: k.rank
+        )

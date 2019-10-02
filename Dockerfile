@@ -5,7 +5,7 @@ FROM python:3.6-slim-stretch
 LABEL base.image="python:3.6-slim-stretch"
 LABEL version="1.1"
 LABEL software="TEStribute"
-LABEL software.version="0.1.0"
+LABEL software.version="0.2.0"
 LABEL software.description="Flask microservice implementing the TEStribute task distribution logic as an API service."
 LABEL software.website="https://github.com/elixir-europe/TEStribute"
 LABEL software.documentation="https://github.com/elixir-europe/TEStribute"

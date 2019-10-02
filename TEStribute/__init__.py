@@ -1,7 +1,6 @@
 """
 Exposes TEStribute main function rank_services()
 """
-from itertools import accumulate
 import logging
 import os
 from typing import (Iterable, Mapping, Optional, Union)
@@ -19,6 +18,7 @@ from TEStribute.log import (log_yaml, setup_logger)
 log_file = os.path.abspath(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "log", "testribute.log")
 )
+logging.captureWarnings(capture=True)
 logger = setup_logger("TEStribute", log_file, logging.DEBUG)
 
 

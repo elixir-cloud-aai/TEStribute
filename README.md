@@ -1,6 +1,6 @@
 # TEStribute
 
-Task distribution for GA4GH TES services.
+Task distribution for GA4GH TES instances.
 
 ## Synopsis
 

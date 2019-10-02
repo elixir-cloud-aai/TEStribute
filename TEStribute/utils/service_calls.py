@@ -68,6 +68,10 @@ def fetch_drs_objects_metadata(
     # Initialize results container
     result_dict = defaultdict(dict)
 
+    # Do not continue if no input objects specified
+    if not object_ids:
+        return result_dict
+
     # Iterate over DRS instances
     for drs_uri in drs_uris:
 

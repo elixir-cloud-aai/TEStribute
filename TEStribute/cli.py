@@ -1,74 +1,151 @@
+"""
+CLI entry point for TEStribute.
+"""
 import argparse
+import logging
 
 from TEStribute import rank_services
 
-# Define a Argparse instance
-parser = argparse.ArgumentParser(description="Receive arguments for the running the TEStribute")
+logging.getLogger("TEStribute").setLevel(logging.DEBUG)
+logger = logging.getLogger("TEStribute")
 
-# Create a group for required arguments 
-requiredArgument = parser.add_argument_group("required arguments")
 
-# Specify optional arguments
-parser.add_argument("-jwt", "--JWT", help="")
-parser.add_argument("-m", "--mode",
-                     help="Integer or string specifying weight/preferance for cost or time",
-                     default=0.5)
+def main():
+    """
+    Parse CLI arguments and call `rank_services()` function.
+    """
+    # Instantiate argument parser
+    parser = argparse.ArgumentParser(
+        description="""Task distribution for GA4GH TES instances.
+        
+        Given a list of TES instances and a set of task resource requirements,
+        TES instances are ranked by time and/or cost considerations. Optionally,
+        the location of input objects can be taken into account."""
+    )
 
-# Specify required arguments
-requiredArgument.add_argument("-object_ids", "--OBJECT_IDS",
-                                nargs="+",
-                                help="List of DRS identifiers of input files required for the task",
-                                required=True)
+    # Create argument groups
+    required = parser.add_argument_group("required arguments")
 
-requiredArgument.add_argument("-cpu_cores", "--CPU_CORES",
-                                help="Requested number of CPUs",
-                                type=int,
-                                required=True)
+    # Define required arguments
+    required.add_argument(
+        "--tes-uri",
+        action="append",
+        help=(
+            "URI of known TES instances that the task may be computed on. " \
+            "Argument can be specified multiple times."
+        ),
+        type=str,
+        required=True,
+        metavar="URI",
+    )
+    required.add_argument(
+        "--cpu-cores",
+        help="requested number of CPUs",
+        type=int,
+        required=True,
+        metavar="INT",
+    )
+    required.add_argument(
+        "--ram-gb",
+        help="requested RAM required in gigabytes (GB)",
+        type=float,
+        required=True,
+        metavar="FLOAT",
+    )
+    required.add_argument(
+        "--disk-gb",
+        help="requested disk size in gigabytes (GB)",
+        type=float,
+        required=True,
+        metavar="FLOAT",
+    )
+    required.add_argument(
+        "--execution-time-sec",
+        help="requested execution time in seconds (s)",
+        type=int,
+        required=True,
+        metavar="INT",
+    )
 
-requiredArgument.add_argument("-ram_gb", "--RAM_GB",
-                                help="Tasks required RAM in gigabytes (GB)",
-                                type=int,
-                                required=True)
+    # Define parser arguments
+    parser.add_argument(
+        "--jwt",
+        help="JWT bearer token to be passed on to TES (and DRS) instances",
+        type=str,
+        default=None,
+        metavar="TOKEN",
+    )
+    parser.add_argument(
+        "--object-id",
+        action="append",
+        help=(
+            "DRS ID of object required by the task. Argument can be " \
+            "specified multiple times."
+        ),
+        type=str,
+        default=None,
+        metavar="ID",
+    )
+    parser.add_argument(
+        "--drs-uri",
+        action="append",
+        help=(
+            "URI of known DRS instance that objects may be read from or " \
+            "written to. Required if at least one `--object_id` is " \
+            "specified. Argument can be specified multiple times."
+        ),
+        type=str,
+        default=None,
+        metavar="URI",
+    )
+    parser.add_argument(
+        "-m", "--mode",
+        help=(
+            "Mode with which service combinations are ranked. Services can " \
+            "be ranked by either 'cost', 'time' or both. For the latter, " \
+            "specify a number between 0 and 1, with the boundaries " \
+            "representing weights at which services are ranked entirely by " \
+            "cost and time, respectively. It is also possible to randomize " \
+            "rankings (specify 'random' or -1)."
+        ),
+        default=0.5,
+        metavar="MODE"
+    )
+    parser.add_argument(
+        "-v", "--version",
+        action='version',
+        version="%(prog)s 0.2.0"
+    )
+     
+    # Parse arguments
+    args = parser.parse_args()
 
-requiredArgument.add_argument("-disk_gb", "--DISK_GB",
-                                help="Tasks required disk size in gigabytes (GB)",
-                                type=int,
-                                required=True)
+    # Process arguments
+    if args.object_id is None:
+        args.object_id = []
+    if args.drs_uri is None:
+        args.drs_uri = []
+    try:
+        args.mode = float(args.mode)
+    except ValueError:
+        pass
 
-requiredArgument.add_argument("-execution_time_sec", "--EXECUTION_TIME_SECONDS",
-                                help="Tasks required execution in seconds (s)",
-                                type=int,
-                                required=True)
+    # Call app's main function with arguments
+    try:
+        rank_services(
+            mode=args.mode,
+            object_ids=args.object_id,
+            drs_uris=args.drs_uri,
+            tes_uris=args.tes_uri,
+            resource_requirements= {
+                "cpu_cores":args.cpu_cores,
+                "disk_gb":args.disk_gb,
+                "execution_time_sec":args.execution_time_sec,
+                "ram_gb":args.ram_gb,
+            }
+        )
+    except Exception as e:
+        logger.error(f"{type(e).__name__}: {e}")
 
-requiredArgument.add_argument("-tes_uris", "--TES_URIS",
-                                nargs="+",
-                                help="A list of root URIs to known TES instances.",
-                                required=True)
-
-requiredArgument.add_argument("-drs_uris", "--DRS_URIS",
-                                nargs="+",    
-                                help="A list of root URIs to known DRS instances.",
-                                required=True)
-
-# TODO :
-#       configure an action send rank_services call
- 
-# sample reading arguments
-arguments = parser.parse_args(["-object_ids","a001","a002",
-                               "-drs_uris","http://131.152.229.71/ga4gh/drs/v1/","http://193.166.24.114/ga4gh/drs/v1/",
-                               "-tes_uris","http://131.152.229.70/ga4gh/tes/v1/","http://193.166.24.111/ga4gh/tes/v1/",
-                               "-cpu_cores","1",
-                               "-disk_gb","1",
-                               "-execution_time_sec","30",
-                               "-ram_gb","1"
-                               ])
-
-# sample of rank_servives call
-rank_services(mode=arguments.mode,
-              object_ids=arguments.OBJECT_IDS,
-              drs_uris=arguments.DRS_URIS,
-              tes_uris=arguments.TES_URIS,
-              resource_requirements= {"cpu_cores":arguments.CPU_CORES,
-                                      "disk_gb":arguments.DISK_GB,
-                                      "execution_time_sec":arguments.EXECUTION_TIME_SECONDS,
-                                      "ram_gb":arguments.RAM_GB,})
+if __name__ == "__main__":
+    main()
