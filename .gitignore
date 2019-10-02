@@ -4,6 +4,7 @@
 
 ### Code ###
 .vscode/*
+TEStribute/.vscode/settings.json
 
 ### PyCharm ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and WebStorm
