@@ -22,7 +22,7 @@ log_file = os.path.abspath(
 )
 logger = setup_logger("TEStribute_benchmarks", log_file, logging.DEBUG)
 
-def setup_drs(uri: 'string',objects: Dict):
+def setup_drs(uri: str, objects: Dict):
     """
     :param uri: sting uri for the service to be updated
     :param objects: list of objects that the db should be populated with
@@ -32,13 +32,13 @@ def setup_drs(uri: 'string',objects: Dict):
     return "updated"
 
 
-def setup_tes(uri: 'string',costs: Dict):
+def setup_tes(uri: str, costs: Dict):
     """
     :param uri: sting uri for the service to be updated
     :param costs: values that the config should be populated with
     """
     tes_client = tes_cli(uri)
-    tes_client.updateTaskInfoConfig(costs["currency"],costs["time_unit"],costs["unit_costs"])
+    tes_client.updateTaskInfoConfig(costs["currency"],costs["unit_costs"])
     return "updated"
 
 

@@ -175,7 +175,7 @@ to the `rank_services()` function, which defines the following parameters:
   "resource_requirements": {
     "cpu_cores": 1,
     "disk_gb": 1,
-    "execution_time_min": 30,
+    "execution_time_sec": 30,
     "ram_gb": 1
   },
   "tes_uris": [
@@ -207,7 +207,7 @@ rank_services(
         "cpu_cores": 1,
         "ram_gb": 1,
         "disk_gb": 1,
-        "execution_time_min": 30
+        "execution_time_sec": 30
     },
     tes_uris=[
         "http://131.152.229.70/ga4gh/tes/v1/",
