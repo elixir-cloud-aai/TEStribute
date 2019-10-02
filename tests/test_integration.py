@@ -16,7 +16,7 @@ RESOURCE_REQUIREMENTS = {
     "cpu_cores": "2",
     "ram_gb": "5",
     "disk_gb": "25",
-    "execution_time_min": "300"
+    "execution_time_sec": "300"
 }
 TES_URIS = None
 MODE = "cost"

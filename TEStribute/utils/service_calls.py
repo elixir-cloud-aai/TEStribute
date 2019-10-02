@@ -8,8 +8,7 @@ Functions that interact with external services.
 from collections import defaultdict
 from itertools import combinations
 import logging
-import socket
-from typing import (Dict, Iterable, List, Optional, Tuple)
+from typing import (Dict, Iterable, List, Optional)
 
 from bravado.exception import HTTPNotFound
 import drs_client
@@ -19,7 +18,6 @@ from ip2geotools.errors import InvalidRequestError
 from requests.exceptions import ConnectionError, HTTPError, MissingSchema
 from simplejson.errors import JSONDecodeError
 import tes_client
-from urllib.parse import urlparse
 
 from TEStribute.errors import ResourceUnavailableError
 from TEStribute.models import (
@@ -31,10 +29,8 @@ from TEStribute.models import (
     Costs,
     Currency,
     DrsObject,
-    Duration,
     ResourceRequirements,
     TaskInfo,
-    TimeUnit,
 )
 
 logger = logging.getLogger("TEStribute")
@@ -79,6 +75,7 @@ def fetch_drs_objects_metadata(
         metadata = _fetch_drs_objects_metadata(
             *drs_ids,
             uri=drs_uri,
+            jwt=jwt,
             timeout=timeout,
         )
 
@@ -139,6 +136,7 @@ def fetch_drs_objects_metadata(
 def _fetch_drs_objects_metadata(
     *ids: str,
     uri: str,
+    jwt: Optional[str] = None,
     timeout: float = 3,
 ) -> Dict[str, DrsObject]:
     """
@@ -162,7 +160,10 @@ def _fetch_drs_objects_metadata(
 
     # Establish connection with DRS; handle exceptions
     try:
-        client = drs_client.Client(uri)
+        client = drs_client.Client(
+            url=uri,
+            jwt=jwt,
+        )
     except TimeoutError:
         logger.warning(
             f"DRS unavailable: connection attempt to DRS '{uri}' timed out."
@@ -275,6 +276,7 @@ def fetch_tes_task_info(
         task_info = _fetch_tes_task_info(
             uri=uri,
             resource_requirements=resource_requirements,
+            jwt=jwt,
             timeout=timeout,
         )
 
@@ -295,6 +297,7 @@ def fetch_tes_task_info(
 def _fetch_tes_task_info(
     uri: str,
     resource_requirements: ResourceRequirements,
+    jwt: Optional[str] = None,
     timeout: float = 3,
 ) -> Optional[TaskInfo]:
     """
@@ -316,7 +319,10 @@ def _fetch_tes_task_info(
     """
     # Establish connection with TES; handle exceptions
     try:
-        client = tes_client.Client(uri)
+        client = tes_client.Client(
+            url=uri,
+            jwt=jwt
+        )
     except TimeoutError:
         logger.warning(
             f"TES unavailable: connection attempt to '{uri}' timed out."
@@ -344,31 +350,18 @@ def _fetch_tes_task_info(
 
     # Generate TaskInfo object
     task_info_obj = TaskInfo(
-        costs_total=Costs(
-            amount=task_info["costs_total"]["amount"],
-            currency=Currency(task_info["costs_total"]["currency"]),
+        estimated_compute_costs=Costs(
+            amount=task_info["estimated_compute_costs"]["amount"],
+            currency=Currency(task_info["estimated_compute_costs"]["currency"]),
         ),
-        costs_cpu_usage=Costs(
-            amount=task_info["costs_cpu_usage"]["amount"],
-            currency=Currency(task_info["costs_cpu_usage"]["currency"]),
+        estimated_storage_costs= Costs(
+            amount=task_info["estimated_storage_costs"]["amount"],
+            currency=Currency(task_info["estimated_storage_costs"]["currency"]),
         ),
-        costs_memory_consumption= Costs(
-            amount=task_info["costs_memory_consumption"]["amount"],
-            currency=Currency(
-                task_info["costs_memory_consumption"]["currency"]
-            ),
-        ),
-        costs_data_storage= Costs(
-            amount=task_info["costs_data_storage"]["amount"],
-            currency=Currency(task_info["costs_data_storage"]["currency"]),
-        ),
-        costs_data_transfer=Costs(
-            amount=task_info["costs_data_transfer"]["amount"],
-            currency=Currency(task_info["costs_data_transfer"]["currency"]),
-        ),
-        queue_time=Duration(
-            duration=task_info["queue_time"]["duration"],
-            unit=TimeUnit(task_info["queue_time"]["unit"]),
+        estimated_queue_time_sec=task_info["estimated_queue_time_sec"],
+        unit_costs_data_transfer=Costs(
+            amount=task_info["unit_costs_data_transfer"]["amount"],
+            currency=Currency(task_info["unit_costs_data_transfer"]["currency"]),
         ),
     )
 
