@@ -392,7 +392,7 @@ def _fetch_tes_task_info(
 
 
 def fetch_exchange_rates(
-    base_currency: str,
+    target_currency: str,
     currencies: Iterable[str],
     amount: float = 1.0,
     bitcoin_proxy: str = 'USD',
@@ -406,9 +406,9 @@ def fetch_exchange_rates(
     is_bitcoin: bool = False
 
     # Special case if base currency is BitCoin
-    if base_currency == 'BTC':
+    if target_currency == 'BTC':
         is_bitcoin = True
-        base_currency = bitcoin_proxy
+        target_currency = bitcoin_proxy
 
     # Instantiate converter
     converter = CurrencyRates()
@@ -417,7 +417,7 @@ def fetch_exchange_rates(
     # Get rates for base currency
 
     try:
-        rates = converter.get_rates(base_currency)
+        rates = converter.get_rates(target_currency)
     except ConnectionError:
         logger.warning(
             f"Could not connect to currency rates service. No exchange rates " \

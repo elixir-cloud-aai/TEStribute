@@ -38,13 +38,13 @@ class Response:
         self,
         request = rq.Request,
         timeout: float = 3,
-        base_currency: Currency = Currency.BTC,
+        target_currency: Currency = Currency.BTC,
     ) -> None:
         # Add attributes
         self.warnings: List[str] = []
         self.request = request
         self.timeout = timeout
-        self.base_currency = base_currency
+        self.target_currency = target_currency
 
         # Get TES task info for resource requirements
         try:
@@ -60,7 +60,7 @@ class Response:
         # Get currency exchange rates
         try:
             self.exchange_rates = fetch_exchange_rates(
-                base_currency=base_currency.value,
+                target_currency=target_currency.value,
                 currencies=[c.value for c in Currency],
                 amount=1.0,
             )
@@ -76,22 +76,26 @@ class Response:
                 task_info.unit_costs_data_transfer,
             ]
             for item in costs:
-                if item.currency.value == self.base_currency:
+                if item.currency.value == self.target_currency:
                     continue
 
                 elif not item.currency.value in self.exchange_rates:
                     logger.warning(
-                        f"Services cannot be ranked. TES '{tes_uri} provided " \
-                        f"costs in currency '{item.currency.value}', for " \
-                        f"which no exchange rate to the configured base " \
-                        f"currency '{self.base_currency}' is available."
+                        f"TES '{tes_uri} provided costs in currency " \
+                        f"'{item.currency.value}', for which no exchange " \
+                        f"rate to the configured base currency " \
+                        f"'{self.target_currency}' is available. Skipped."
                     )
                     remove_tes.append(tes_uri)
                     continue
-
+                
+                # Convert costs to base c
                 item.amount /= self.exchange_rates[item.currency.value]
-                item.currency = Currency(base_currency)
-
+                item.currency = Currency(target_currency)
+        
+        # Remove TES instances that provide costs that cannot be compared
+        for tes_uri in remove_tes:
+            del self.task_info[tes_uri]
 
         # Get metadata for DRS input objects
         try:
@@ -130,7 +134,7 @@ class Response:
                         access_uris=access_uris,
                         cost_estimate=Costs(
                             amount=-1,
-                            currency=self.base_currency,
+                            currency=self.target_currency,
                         ),
                         rank=-1,
                         time_estimate=-1,

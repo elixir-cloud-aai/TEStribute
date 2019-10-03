@@ -126,7 +126,7 @@ def rank_services(
     response = rs.Response(
         request=request,
         timeout=config["timeout"],
-        base_currency=models.Currency[config["base_currency"]],
+        target_currency=models.Currency[config["target_currency"]],
     )
     log_yaml(
         level=logging.DEBUG,
@@ -137,7 +137,7 @@ def rank_services(
         header="=== CURRENCY EXCHANGE RATES ===",
         level=logging.DEBUG,
         logger=logger,
-        base_currency=response.base_currency.value,
+        target_currency=response.target_currency.value,
         object_info=response.exchange_rates,
     )
     log_yaml(
