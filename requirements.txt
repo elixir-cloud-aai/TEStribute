@@ -24,6 +24,7 @@ docutils==0.15.2
 drs-client==0.2.0
 fido==4.2.2
 Flask==1.1.1
+forex-python==1.5
 future==0.17.1
 geocoder==1.38.1
 geographiclib==1.49

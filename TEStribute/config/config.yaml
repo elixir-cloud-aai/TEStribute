@@ -1,5 +1,6 @@
 # General app settings
 timeout: 0.5
+target_currency: EUR
 
 # Security settings
 security:

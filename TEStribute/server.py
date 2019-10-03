@@ -7,7 +7,7 @@ from shutil import copyfile
 from connexion import App
 
 from TEStribute.config import config_parser
-from TEStribute.errors import (register_error_handlers)
+from TEStribute.errors import register_error_handlers
 from TEStribute.security.process_jwt import JWT
 
 # Instantiate app
