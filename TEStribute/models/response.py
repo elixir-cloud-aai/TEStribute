@@ -70,6 +70,7 @@ class Response:
         # Convert currencies to base currency
         remove_tes: List = []
         for tes_uri, task_info in self.task_info.items():
+            unsupported_currency = False
             costs = [
                 task_info.estimated_compute_costs,
                 task_info.estimated_storage_costs,
@@ -79,19 +80,24 @@ class Response:
                 if item.currency.value == self.target_currency:
                     continue
 
-                elif not item.currency.value in self.exchange_rates:
-                    logger.warning(
-                        f"TES '{tes_uri} provided costs in currency " \
-                        f"'{item.currency.value}', for which no exchange " \
-                        f"rate to the configured base currency " \
-                        f"'{self.target_currency}' is available. Skipped."
-                    )
-                    remove_tes.append(tes_uri)
+                elif not item.currency.value in self.exchange_rates or \
+                    not self.exchange_rates[item.currency.value]:
+                    unsupported_currency = True
                     continue
                 
                 # Convert costs to base c
                 item.amount /= self.exchange_rates[item.currency.value]
                 item.currency = Currency(target_currency)
+            
+            if unsupported_currency:
+                logger.warning(
+                    f"TES '{tes_uri}' provided costs in currency " \
+                    f"'{item.currency.value}', for which no exchange rate " \
+                    f"to the configured base currency " \
+                    f"'{self.target_currency.value}' is available. Skipped."
+                )
+                remove_tes.append(tes_uri)
+                continue
         
         # Remove TES instances that provide costs that cannot be compared
         for tes_uri in remove_tes:
