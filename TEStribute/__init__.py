@@ -126,6 +126,7 @@ def rank_services(
     response = rs.Response(
         request=request,
         timeout=config["timeout"],
+        base_currency=models.Currency[config["base_currency"]],
     )
     log_yaml(
         level=logging.DEBUG,
@@ -137,6 +138,12 @@ def rank_services(
         level=logging.DEBUG,
         logger=logger,
         object_info={k: v.to_dict() for k, v in response.task_info.items()},
+    )
+    log_yaml(
+        header="=== TES TASK INFO ===",
+        level=logging.DEBUG,
+        logger=logger,
+        object_info=response.currency_rates,
     )
     log_yaml(
         header="=== DRS OBJECT INFO ===",

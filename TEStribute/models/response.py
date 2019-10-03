@@ -21,6 +21,7 @@ from TEStribute.models import (
 )
 import TEStribute.models.request as rq
 from TEStribute.utils.service_calls import (
+    fetch_exchange_rates,
     fetch_drs_objects_metadata,
     fetch_tes_task_info,
     ip_distance,
@@ -36,13 +37,14 @@ class Response:
     def __init__(
         self,
         request = rq.Request,
-        timeout = float,
+        timeout: float = 3,
+        base_currency: Currency = Currency.BTC,
     ) -> None:
-        # Add warnings
+        # Add attributes
         self.warnings: List[str] = []
-
-        # Add request
         self.request = request
+        self.timeout = timeout
+        self.base_currency = base_currency
 
         # Get TES task info for resource requirements
         try:
@@ -54,6 +56,26 @@ class Response:
             )
         except ResourceUnavailableError:
             raise
+
+        # Get currency exchange rates
+        try:
+            self.exchange_rates = fetch_exchange_rates(
+                base_currency=base_currency.value,
+                currencies=[c.value for c in Currency],
+                amount=1.0,
+            )
+        except ResourceUnavailableError:
+            raise
+
+        # Convert currencies to base currency
+        for tes_uri, task_info in self.task_info.items():
+            currency = task_info.estimated_compute_costs.currency
+            if not currency in self.exchange_rates:
+                raise ResourceUnavailableError(
+                    f"Services cannot be ranked. No exchange rate available " \
+                    f"for currency {currency} to configured base currency " \
+                    f"{self.base_currency}."
+                )
 
         # Get metadata for DRS input objects
         try:
@@ -69,29 +91,14 @@ class Response:
         # Determine object sizes
         self.object_sizes: Dict[str, int] = {}
         object_sizes: Dict[str, Set[int]] = {}
-        for drs_id, val in self.object_info.items():
-            object_sizes[drs_id] = set()
+        for object_id, val in self.object_info.items():
+            object_sizes[object_id] = set()
             for drs_object in val.values():
-                object_sizes[drs_id].add(drs_object.size)
-        for drs_id, sizes in object_sizes.items():
-            if len(sizes) == 1:
-                self.object_sizes[drs_id] = int(list(sizes)[0])
-            elif len(sizes) == 0:
-                warning = (
-                    f"Services cannot be ranked. No size information for " \
-                    f"object '{drs_id}' available."
-                )
-                self.warnings.append(warning)
-                logger.error(warning)
-                raise ResourceUnavailableError
-            else:
-                warning = (
-                    f"Services cannot be ranked. Multiple sizes for the same " \
-                    f"object '{drs_id}' listed: {sizes}" \
-                )
-                self.warnings.append(warning)
-                logger.error(warning)
-                raise ResourceUnavailableError
+                object_sizes[object_id].add(drs_object.size)
+        self.object_sizes = {
+            object_id: int(list(sizes)[0]) 
+                for object_id, sizes in object_sizes.items()
+        }
 
         # Get combinations of access URIs for TES instances and objects
         self.access_uri_combinations = self.get_access_uri_combinations(

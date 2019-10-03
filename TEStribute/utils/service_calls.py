@@ -12,6 +12,8 @@ from typing import (Dict, Iterable, List, Optional)
 
 from bravado.exception import HTTPNotFound
 import drs_client
+from forex_python.bitcoin import BtcConverter
+from forex_python.converter import CurrencyRates
 from geopy.distance import geodesic
 from ip2geotools.databases.noncommercial import DbIpCity
 from ip2geotools.errors import InvalidRequestError
@@ -97,40 +99,55 @@ def fetch_drs_objects_metadata(
             for object_id in object_ids:
                 if object_id not in result_dict:
                     raise ResourceUnavailableError(
-                        f"Object '{object_id}' is not available at any of " \
-                        f"the specified DRS instances."
+                        f"Services cannot be ranked. Object '{object_id}' is " \
+                        f"not available at any of the specified DRS instances."
                     )
 
             # Check for consistency of object sizes
             for object_id, locations in result_dict.items():
                 obj_sizes: List[float] = []
                 for metadata in locations.values():
-                    obj_sizes.append(metadata.size)
-                if len(set(obj_sizes)) != 1:
+                    try:
+                        obj_sizes.append(metadata.size)
+                    except AttributeError:
+                        raise ResourceUnavailableError(
+                            f"Services cannot be ranked. No size information " \
+                            f"for object '{object_id}' available."
+                        )
+                if len(set(obj_sizes)) > 1:
                     raise ResourceUnavailableError(
-                        f"Object '{object_id}' has different sizes across " \
-                        f"different DRS instances: {set(obj_sizes)}"
+                        f"Services cannot be ranked. Object '{object_id}' " \
+                        f"has different sizes across different DRS " \
+                        f"instances: {set(obj_sizes)}"
                     )
+                
 
             # Check for consistency of object checksums
             for object_id, locations in result_dict.items():
                 object_checksums: Dict[ChecksumType, List[str]] = {}
                 for metadata in locations.values():
-                    for checksum in metadata.checksums:
-                        if checksum.type in object_checksums:
-                            object_checksums[checksum.type].append(
-                                checksum.checksum
-                            )
-                        else:
-                            object_checksums[checksum.type] = [
-                                checksum.checksum
-                            ]
-                for t, c in object_checksums.items():
-                    if len(set(c)) != 1:
+                    try:
+                        for checksum in metadata.checksums:
+                            if checksum.type in object_checksums:
+                                object_checksums[checksum.type].append(
+                                    checksum.checksum
+                                )
+                            else:
+                                object_checksums[checksum.type] = [
+                                    checksum.checksum
+                                ]
+                    except AttributeError:
                         raise ResourceUnavailableError(
-                            f"Object '{object_id}' has different {t.value} " \
-                            f"checksums across different DRS instances: " \
-                            f"{set(c)}"
+                            f"Services cannot be ranked. No checksum " \
+                            f"available for object '{object_id}'."
+                        )
+                for checksum_type, checksums in object_checksums.items():
+                    if len(set(checksums)) > 1:
+                        raise ResourceUnavailableError(
+                            f"Services cannot be ranked. Object " \
+                            f"'{object_id}' has different " \
+                            f"{checksum_type.value} checksums across " \
+                            f"different DRS instances: {set(checksums)}"
                         )
 
         # Return results
@@ -291,7 +308,8 @@ def fetch_tes_task_info(
     # Check whether at least one TES instance provided task info
     if check_results and not result_dict:
         raise ResourceUnavailableError(
-            "None of the specified TES instances provided any task info."
+            "Services cannot be ranked. None of the specified TES instances " \
+            "provided any task info."
         )
     
     # Return results
@@ -371,6 +389,55 @@ def _fetch_tes_task_info(
 
     # Return task info
     return task_info_obj
+
+
+def fetch_exchange_rates(
+    base_currency: str,
+    currencies: Iterable[str],
+    amount: float = 1.0,
+    bitcoin_proxy: str = 'USD',
+) -> Dict[str, Optional[float]]:
+    """
+    Given an amount and a base currency, returns the exchange rates for a set
+    of currencies.
+    """
+    rates: Dict[str, Optional[float]] = {}
+    rates_select: Dict[str, Optional[float]] = {}
+    is_bitcoin: bool = False
+
+    # Special case if base currency is BitCoin
+    if base_currency == 'BTC':
+        is_bitcoin = True
+        base_currency = bitcoin_proxy
+
+    # Instantiate converter
+    converter = CurrencyRates()
+    converter_btc = BtcConverter()
+    
+    # Get rates for base currency
+    rates = converter.get_rates(base_currency)
+
+    # Get Bitcoin rate for base currency
+    rates['BTC'] = converter_btc.convert_to_btc(
+        amount=amount,
+        currency=bitcoin_proxy
+    )
+
+    # Select rates
+    for currency in currencies:
+        if currency in rates:
+            rates_select[currency] = rates[currency]
+        else:
+            rates_select[currency] = None
+
+    # Convert to base BitCoin if BitCoin was base currency
+    if is_bitcoin:
+        rate_btc = rates_select['BTC']
+        for currency in rates_select.keys():
+            if rates_select[currency]:
+                rates_select[currency] = rates_select[currency] / rate_btc
+
+    return rates_select
 
 
 def ip_distance(
