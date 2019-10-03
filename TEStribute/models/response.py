@@ -52,7 +52,7 @@ class Response:
                 tes_uris=request.tes_uris,
                 resource_requirements=request.resource_requirements,
                 jwt=request.jwt,
-                timeout=timeout,
+                timeout=self.timeout,
             )
         except ResourceUnavailableError:
             raise
@@ -68,14 +68,30 @@ class Response:
             raise
 
         # Convert currencies to base currency
+        remove_tes: List = []
         for tes_uri, task_info in self.task_info.items():
-            currency = task_info.estimated_compute_costs.currency
-            if not currency in self.exchange_rates:
-                raise ResourceUnavailableError(
-                    f"Services cannot be ranked. No exchange rate available " \
-                    f"for currency {currency} to configured base currency " \
-                    f"{self.base_currency}."
-                )
+            costs = [
+                task_info.estimated_compute_costs,
+                task_info.estimated_storage_costs,
+                task_info.unit_costs_data_transfer,
+            ]
+            for item in costs:
+                if item.currency.value == self.base_currency:
+                    continue
+
+                elif not item.currency.value in self.exchange_rates:
+                    logger.warning(
+                        f"Services cannot be ranked. TES '{tes_uri} provided " \
+                        f"costs in currency '{item.currency.value}', for " \
+                        f"which no exchange rate to the configured base " \
+                        f"currency '{self.base_currency}' is available."
+                    )
+                    remove_tes.append(tes_uri)
+                    continue
+
+                item.amount /= self.exchange_rates[item.currency.value]
+                item.currency = Currency(base_currency)
+
 
         # Get metadata for DRS input objects
         try:
@@ -83,7 +99,7 @@ class Response:
                 drs_uris=request.drs_uris,
                 object_ids=request.object_ids,
                 jwt=request.jwt,
-                timeout=timeout,
+                timeout=self.timeout,
             )
         except ResourceUnavailableError:
             raise
@@ -114,7 +130,7 @@ class Response:
                         access_uris=access_uris,
                         cost_estimate=Costs(
                             amount=-1,
-                            currency=Currency.BTC,
+                            currency=self.base_currency,
                         ),
                         rank=-1,
                         time_estimate=-1,

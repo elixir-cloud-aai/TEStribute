@@ -6,8 +6,8 @@ import logging
 
 from TEStribute import rank_services
 
-logging.getLogger("TEStribute").setLevel(logging.DEBUG)
 logger = logging.getLogger("TEStribute")
+logger.setLevel(logging.INFO)
 
 
 def main():

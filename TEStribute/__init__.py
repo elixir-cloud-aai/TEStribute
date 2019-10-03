@@ -18,8 +18,8 @@ from TEStribute.log import (log_yaml, setup_logger)
 log_file = os.path.abspath(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "log", "testribute.log")
 )
+logger = setup_logger("TEStribute", logging.INFO)
 logging.captureWarnings(capture=True)
-logger = setup_logger("TEStribute", log_file, logging.DEBUG)
 
 
 def rank_services(
@@ -134,16 +134,17 @@ def rank_services(
         **response.to_dict()
     )
     log_yaml(
-        header="=== TES TASK INFO ===",
+        header="=== CURRENCY EXCHANGE RATES ===",
         level=logging.DEBUG,
         logger=logger,
-        object_info={k: v.to_dict() for k, v in response.task_info.items()},
+        base_currency=response.base_currency.value,
+        object_info=response.exchange_rates,
     )
     log_yaml(
         header="=== TES TASK INFO ===",
         level=logging.DEBUG,
         logger=logger,
-        object_info=response.currency_rates,
+        object_info={k: v.to_dict() for k, v in response.task_info.items()},
     )
     log_yaml(
         header="=== DRS OBJECT INFO ===",

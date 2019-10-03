@@ -10,7 +10,6 @@ import yaml
 
 def setup_logger(
     name: str,
-    log_file: str,
     level: int = logging.INFO
 ) -> logging.Logger:
     """Set up logger"""
@@ -27,15 +26,6 @@ def setup_logger(
             )
         )
         logger.addHandler(stream)
-
-        # Add file handler
-        fl = logging.FileHandler(log_file)
-        fl.setFormatter(
-            logging.Formatter(
-                 "[%(asctime)s: %(levelname)s] [%(filename)s:%(lineno)s - %(funcName)5s()] %(message)s"
-            )
-        )
-        logger.addHandler(fl)
 
     return logger
 

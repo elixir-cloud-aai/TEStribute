@@ -415,13 +415,28 @@ def fetch_exchange_rates(
     converter_btc = BtcConverter()
     
     # Get rates for base currency
-    rates = converter.get_rates(base_currency)
+
+    try:
+        rates = converter.get_rates(base_currency)
+    except ConnectionError:
+        logger.warning(
+            f"Could not connect to currency rates service. No exchange rates " \
+            f"available."
+        )
+        return rates_select
 
     # Get Bitcoin rate for base currency
-    rates['BTC'] = converter_btc.convert_to_btc(
-        amount=amount,
-        currency=bitcoin_proxy
-    )
+    try:
+        rates['BTC'] = converter_btc.convert_to_btc(
+            amount=amount,
+            currency=bitcoin_proxy
+        )
+    except ConnectionError:
+        logger.warning(
+            f"Could not connect to currency rates service. No BitCoin " \
+            f"exchange rate available."
+        )
+        return rates_select
 
     # Select rates
     for currency in currencies:
