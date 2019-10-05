@@ -1,0 +1,21 @@
+# Include markdown files
+include *.md
+
+# Include the license file
+include LICENSE
+
+# Include config files
+include *.yaml
+
+# Include the requirements
+include requirements.txt
+
+# Include .gitignore
+include .gitignore
+
+# Include Dockerfile
+include Dockerfile
+
+# Include graphics
+include *.svg
+include *.png
