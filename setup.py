@@ -30,7 +30,6 @@ setup(
         'ga4gh tes elixir rest api app openapi python'
         'task distribution'
     ),
-    keywords=(),
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
         "Development Status :: 3 - Alpha",
