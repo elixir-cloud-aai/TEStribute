@@ -2,7 +2,9 @@
 CLI entry point for TEStribute.
 """
 import argparse
+import json
 import logging
+import sys
 
 from TEStribute import rank_services
 
@@ -132,7 +134,7 @@ def main():
 
     # Call app's main function with arguments
     try:
-        rank_services(
+        response = rank_services(
             mode=args.mode,
             object_ids=args.object_id,
             drs_uris=args.drs_uri,
@@ -146,6 +148,10 @@ def main():
         )
     except Exception as e:
         logger.error(f"{type(e).__name__}: {e}")
+        sys.exit(1)
+    
+    # Print output
+    sys.stdout.write(json.dumps(response.to_dict()))
 
 if __name__ == "__main__":
     main()

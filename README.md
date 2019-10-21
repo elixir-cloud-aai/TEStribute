@@ -7,72 +7,62 @@ Task distribution for GA4GH TES instances.
 Proof of concept implementation of a **task distribution** logic for a federated
 network of [GA4GH][1] [Task Execution Service] (TES) instances.
 
+![TEStribute_working]
+
 ## Usage
 
-`TEStribute` can be run in two ways:
+You can use `TEStribute` in three ways:
 
-### From a Python module
-
-First install `TEStribute` (e.g., inside your projects virtual environment)
-with:
+- Call the **HTTP API service**, e.g. with `curl`:
 
 ```bash
-pip install -e \
-git+git@github.com:elixir-europe/TEStribute.git@master#egg=TEStribute
+curl -X POST SERVICE_URI -H "Content-Type: application/json" -d PAYLOAD
 ```
 
-Then, in the Python module where you want to use `TEStribute`, add the
-following code:
+- Call the **console script**:
+
+```bash
+testribute [-h] --tes-uri URI --cpu-cores INT --ram-gb FLOAT --disk-gb FLOAT
+           --execution-time-sec INT [--jwt TOKEN] [--object-id ID] [--drs-uri
+           URI] [-m MODE] [-v]
+```
+
+- Call the **main function** directly, from within your Python code:
 
 ```py
 from TEStribute import rank_services
 
-rank_services()
+rank_services(...)
 ```
-
-### From the command line
-
-```bash
-python TEStribute/__init__.py
-```
-
-> In this use case, currently it is not possible to pass arguments directly. See
-> section [Extended usage](#Extended-usage) below for ways how `TEStribute` can
-> be run with different parameters.
 
 ## Implementation details
 
-Given lists of available [GA4GH][1] [Task Execution Service] (TES) and [Data
-Repository Service] (DRS) instances, the DRS identifiers for all input files,
-and a task's compute resource requirements (e.g., extracted from a `POST /tasks`
-TES request), the software returns a list of combinations of TES and DRS
-instances (per input file) that are rank-ordered according to either increasing
-estimated **total costs**, increasing estimated **total processing times**, or a
-weighting factor that balances both of these parameters.
+Given a set of available [GA4GH][1] [Task Execution Service] (TES) instances, a
+task's compute resource requirements, the [Data Repository Service] (DRS)
+object identifiers of all task inputs (if any), and a list of DRS instances
+where these objects might be obtained from, TEStribute returns a list of
+combinations of TES instances and input object locations, rank-ordered according
+to either increasing *estimated total costs*, increasing *estimated total
+processing times*, or a weighting factor that balances both of these
+properties.
 
-The application currently relies on [modified TES specifications] and the
-assumption that DRS file identifiers are globally unique (i.e., a given
-identifier will point to the same exact file on any DRS instance). More detailed
-information on these requirements is available at [mock-TES] and [mock-DRS],
-mockup services which implement these modifications/assumptions. The
-corresponding clients [TES-cli] and [DRS-cli] are used within `TEStribute`
-to interact with these services.
-
-The diagram shown below shows how the TEStribute works at the moment.
-![TEStribute_working]
+The application currently relies on [modifications] to the TES specifications
+and assumes that DRS object identifiers are globally unique (i.e., a given
+identifier will point to the same exact file on any DRS instance), which is
+not warranted by current DRS specs. More detailed information on these
+requirements is available at [mock-TES] and [mock-DRS], mockup services which
+implement these modifications/assumptions. The corresponding clients [TES-cli]
+and [DRS-cli] are used within `TEStribute` to interact with these services.
 
 ## Installation
 
-### API service (dockerized)
+### Deploying the API service
 
 Ensure you have the following software installed:
 
-* [Docker](https://www.docker.com/) (18.06.1-ce, build e68fc7a)
-* [docker-compose](https://docs.docker.com/compose/) (1.23.1, build b02f1306)
-* [Git](https://git-scm.com/) (tested with version 2.17.1)
-
-> Note: These are the versions used for development/testing. Other versions
-> may or may not work.
+- [Docker](https://www.docker.com/) (18.06.1-ce, build e68fc7a)
+- [docker-compose](https://docs.docker.com/compose/) (1.23.1, build b02f1306)
+- [Git](https://git-scm.com/) (tested with version 2.17.1)
 
 Clone repository and start Docker service
 
@@ -82,84 +72,80 @@ cd app
 docker-compose up --build --detach
 ```
 
-Visit Swagger UI
+You can explore the HTTP API via the Swagger UI:
 
 ```bash
 firefox http://localhost:7979/ui/
 ```
 
-### For CLI usage & imports
+### CLI usage & import
 
 Ensure you have the following software installed:
 
-* [Git](https://git-scm.com/) (tested with version 2.17.1)
-* [Python](https://www.python.org) (tested with version 3.6.8)
-* [pip](https://pip.pypa.io/en/stable/) (tested with version 19.2.2)
-* [virtualenv](https://virtualenv.pypa.io/en/latest/)
-  (tested with version 15.1.0)
+- [Python](https://www.python.org) (tested with version 3.6.8)
+- [pip](https://pip.pypa.io/en/stable/) (tested with version 19.2.2)
 
-> Note: These are the versions used for development/testing. Other versions
-> may or may not work.
-
-Clone repository, install app & dependencies
+Install package and `testribute` console script:
 
 ```bash
-git clone git@github.com:elixir-europe/TEStribute.git app
-cd app
-virtualenv -p `which python3` venv
-source venv/bin/activate
-pip install -r requirements.txt
-python setup.py develop
+pip install TEStribute
 ```
 
 ## Extended usage
 
-When supplied without any arguments, the `rank_services()` function defined in
-`__init__.py` uses default values from a [config] file. Currently, there are two
-ways of running `TEStribute` with different arguments:
+### Options
 
-### Call `rank_services()` with arguments
+The following properties/options are available when running TEStribute,
+regardless of whether the software is run as an HTTP API service, as a console
+script or directly from within your Python code. The CLI option is indicated
+in parentheses in those cases where it differs from API / import usage:
 
-When [importing](#From-a-Python-module) `TEStribute`, pass any desired arguments
-to the `rank_services()` function, which defines the following parameters:
+- `object_ids` (`object-id`): DRS IDs of objects required by the task. When
+  using the console script, indicate the option multiple times to pass multiple
+  arguments.
+- `drs_uris` (`drs-id`): URIs of DRS instances that objects may be read from or
+  written to. When using the console script, indicate the option multiple times
+  to pass multiple arguments.
+- `mode`: Defines how service combinations are ranked, either by 'cost', 'time'
+  or both. For the latter, specify a number between 0 and 1, with the boundaries
+  representing weights at which services are ranked entirely by cost and time,
+  respectively. It is also possible to randomize rankings (specify 'random' or
+  -1).
+- `resource_requirements` (not available as CLI option, use properties
+  directly): Map of resources required for the task:
+  - `cpu_cores` (`cpu-cores`): Requested number of CPUs.
+  - `disk_gb` (`disk-gb`): Requested disk size in gigabytes (GB).
+  - `execution_time_sec` (`execution-time-sec`): Requested execution time in
+    seconds (s).
+  - `preemptible` (not available as CLI option): Is the task allowed to run on
+    preemptible compute instances (e.g. AWS Spot)? Currently not used.
+  - `ram_gb`: Requested RAM required in gigabytes (GB).
+  - `zones` (not available as CLI option): Request that the task be run in
+    these compute zones. Currently not used.
+- `tes_uris` (`tes-uri`): URIs of known TES instances that the task may be
+  computed on. When using the console script, indicate the option multiple times
+  to pass multiple arguments.
+- `jwt`: JSON Web Token (JWT) bearer token that is attached as an
+  `Authorization` request header, following the keyword `Bearer`, to any
+  outgoing service call, if provided, in order to ascertain whether the user has
+  permissions to access resources and/or whether user-specific policies or
+  contstraints apply (e.g., custom prices, discounts, quotas). Note that when
+  using TEStribute through the HTTP API, this property is not available.
+  Instead, the token value itself needs to be passed as an `Authorization`
+  request header, also following the `Bearer` keyword.
 
-* **`object_ids`**: List of DRS identifiers of input files required for the task.
-  Can be derived from `inputs` property of the `tesTask` model of the [GA4GH]
-  [Task Execution Service] schema described here.
-* **`resource_requirements`**: Dictionary of resources required for the task.
-  The required format is defined in the `tesResources` model of the [modified
-  TES specifications] defined in [mock-TES]. Note that the `preemptible` and
-  `zones` properties are currently not used.
-* **`tes_uris`**: A list of root URIs to known TES instances.
-* **`drs_uris`**: A list of root URIs to known DRS instances.
-* **`mode`**: Either a [`mode.Mode`] enumeration object, one of its members
-  `cost`, `time` or `random`, or one of its values `0`, `1`, `-1`, respetively.
-  Depending on the mode, _valid_ combinations of TES and DRS services are
-  rank-ordered by increasing cost or time, or are randomized for testing/control
-  purposes. Apart from the discrete states, it is also possible to pass a float
-  between `0` and `1`. In that case, the ordering of services is balanced
-  between cost and time optimization (i.e., the closer to `1`, the more time
-  efficiency will be considered).
-* **`mode`**: Depending on the mode, _valid_ combinations of TES and DRS
-  instances are rank-ordered by increasing cost or time, or are randomized for
-  testing/control purposes. When passing a `float` (see below), the ordering of
-  services is balanced between cost and time optimization, with values closer to
-  `0` (`1`) leading to a more cost (time) efficient outcome. Valid arguments
-  are:
-  * A [`mode.Mode`] enumeration object
-  * Members of [`mode.Mode`], currently `cost`, `time` or `random`
-  * Values of [`mode.Mode`], currently `0`, `1`, `-1`, corresponding to `cost`,
-    `time` and `random`, respectively
-  * A `float` between `0` and `1`
-* **`auth_header`**: Bearer (authorization) token to be passed to any TES/DRS
-  calls in order to ascertain whether the user has permissions to access
-  resources provided by the services specified via the `tes_uris` and `drs_uris`
-  arguments, and whether there are particular constraints or provisions in place
-  for the given user (e.g., custom prices, quotas). Currently not implemented.
+> For more details, including typing information, explore the [API definition],
+> which also forms the basis for validating CLI arguments and the inputs to the
+> `rank_services()` function.
 
-#### Example call
+### Example calls
 
-##### API service
+The following are equivalent calls for either of the TEStribute entry points
+defined above. Note that the provided TES and DRS URIs point to test instances
+of the services which may or may not be up and running at any given time.
+Therefore, the success of the calls cannot be guaranteed.
+
+#### API service call payload (JSON)
 
 ```json
 {
@@ -175,7 +161,7 @@ to the `rank_services()` function, which defines the following parameters:
   "resource_requirements": {
     "cpu_cores": 1,
     "disk_gb": 1,
-    "execution_time_sec": 30,
+    "execution_time_sec": 1800,
     "ram_gb": 1
   },
   "tes_uris": [
@@ -185,18 +171,27 @@ to the `rank_services()` function, which defines the following parameters:
 }
 ```
 
-##### CLI
+#### Console script call
 
-Coming soon...
+```bash
+testribute \
+  --tes-uri="http://131.152.229.70/ga4gh/tes/v1/" \
+  --tes-uri="http://193.166.24.111/ga4gh/tes/v1/" \
+  --cpu-cores=1 \
+  --ram-gb=1 \
+  --disk-gb=1 \
+  --execution-time-sec=1800 \
+  --object-id="a001" \
+  --object-id="a002" \
+  --drs-id="http://131.152.229.71/ga4gh/drs/v1/" \
+  --drs_id="http://193.166.24.114/ga4gh/drs/v1/" \
+  --mode=0.5
+```
 
-In this execution mode, it is not necessary to pass arguments for all
-parameters. Omit any arguments to use the corresponding default values as
-defined in the [config] file.
-
-##### Importing `rank_services()`
+#### Function call
 
 ```py
-from TEStribute import rank_services()
+from TEStribute import rank_services
 
 rank_services(
     object_ids=[
@@ -207,7 +202,7 @@ rank_services(
         "cpu_cores": 1,
         "ram_gb": 1,
         "disk_gb": 1,
-        "execution_time_sec": 30
+        "execution_time_sec": 1800
     },
     tes_uris=[
         "http://131.152.229.70/ga4gh/tes/v1/",
@@ -218,36 +213,124 @@ rank_services(
         "http://193.166.24.114/ga4gh/drs/v1/"
     ],
     mode=0.5,
-    auth_header=None
+    jwt=None
 )
 ```
 
-In this execution mode, it is not necessary to pass arguments for all
-parameters. Omit any arguments to use the corresponding default values as
-defined in the [config] file or, alternatively, pass `None`.
+### Return types
 
-#### Return type
+#### Success
 
-The function returns an ordered list of dictionaries of the form:
+Upon success, the API service returns a JSON object such as this:
 
-```py
+```json
 {
-    "rank": "integer",
-    "TES": "TES_URL",
-    object_id_1: "DRS_URL",
-    object_id_2: "DRS_URL",
-    ...
-    "output_files": "DRS_URL",
+  "service_combinations": [
+    {
+      "access_uris": {
+        "a001": "ftp://ftp.ensembl.org/pub/release-96/fasta/homo_sapiens/dna//Homo_sapiens.GRCh38.dna.chromosome.19.fa.gz",
+        "a002": "ftp://ftp.ensembl.org/pub/release-81/bed/ensembl-compara/11_teleost_fish.gerp_constrained_elements/gerp_constrained_elements.tetraodon_nigroviridis.bed.gz",
+        "tes_uri": "http://193.166.24.111/ga4gh/tes/v1/"
+      },
+      "cost_estimate": {
+        "amount": 294727.1443451331,
+        "currency": "EUR"
+      },
+      "rank": 1,
+      "time_estimate": 2514
+    },
+    {
+      "access_uris": {
+        "a001": "ftp://ftp.ensembl.org/pub/release-96/fasta/homo_sapiens/dna//Homo_sapiens.GRCh38.dna.chromosome.19.fa.gz",
+        "a002": "ftp://ftp.ensembl.org/pub/release-81/bed/ensembl-compara/11_teleost_fish.gerp_constrained_elements/gerp_constrained_elements.tetraodon_nigroviridis.bed.gz",
+        "tes_uri": "http://131.152.229.70/ga4gh/tes/v1/"
+      },
+      "cost_estimate": {
+        "amount": 294697.1938522269,
+        "currency": "EUR"
+      },
+      "rank": 2,
+      "time_estimate": 3298
+    }
+  ],
+  "warnings": []
 }
 ```
 
-where `[object_id]` entries are taken from parameter `object_ids`.
+You can check out the `Response` model in the [API definition] for more details.
+For the other entry points, the general response upon success is the same, but
+provided in different ways. When calling `rank_services()` directly from within
+Python code, the response is an instance of Python class `Response`, which is
+based on the corresponding model in the [API definition] and defined in module
+[TEStribute.models.response]. It can be converted to dictionary form with:
 
-### Modify the configuration file
+```py
+response = rank_service(...)
+response.to_dict()
+```
 
-Edit the config file at `TEStribute/config/config.yaml`.
+It can be further converted to JSON with:
 
-Then run `TEStribute` as described above.
+```py
+import json
+
+json.dumps(response.to_dict())
+```
+
+When using the `testribute` console script, the JSONified response is printed to
+`STDOUT`.
+
+#### Failure
+
+In case of failure, the API service returns a JSON object of the following form:
+
+```json
+{
+  "code": 400,
+  "errors": [
+    {
+      "reason": "werkzeug.exceptions.BadRequest",
+      "message": [
+        "Services cannot be ranked. None of the specified TES instances provided any task info."
+      ]
+    }
+  ],
+  "message": "The request caused an error."
+}
+```
+
+When using the console script `testribute`, an error will lead to the script
+exiting with a non-zero return code. In addition, warnings and errors are
+written to the log which is streamed to `STDERR`, e.g.:
+
+```console
+[WARNING] TES unavailable: the provided URI 'http://i.do.not.exist/' could not be resolved.
+[ERROR] ResourceUnavailableError: Services cannot be ranked. None of the specified TES instances provided any task info.
+```
+
+When calling `rank_services()` directly from within Python code, traceback
+information for any error is provided, too. For
+example:
+
+```console
+[WARNING] TES unavailable: the provided URI 'http://i.do.not.exist/' could not be resolved.
+Traceback (most recent call last):
+  File "<stdin>", line 21, in <module>
+  File "/home/uniqueg/Dropbox/repos/TEStribute/TEStribute/__init__.py", line 129, in rank_services
+    target_currency=models.Currency[config["target_currency"]],
+  File "/home/uniqueg/Dropbox/repos/TEStribute/TEStribute/models/response.py", line 55, in __init__
+    timeout=self.timeout,
+  File "/home/uniqueg/Dropbox/repos/TEStribute/TEStribute/utils/service_calls.py", line 311, in fetch_tes_task_info
+    "Services cannot be ranked. None of the specified TES instances " \
+TEStribute.errors.ResourceUnavailableError: Services cannot be ranked. None of the specified TES instances provided any task info.
+```
+
+### Configuration
+
+It is possible to configure some settings of the app, e.g., how JWTs are parsed,
+processed and forwarded or in which prices costs are reported, by modifying the
+the [config file](TEStribute/config/config.yaml) before starting the service /
+running TEStribute.
 
 ## Testing
 
@@ -256,6 +339,8 @@ Unit and integration tests can be run with the following command:
 ```bash
 pytest
 ```
+
+> Note that test coverage is currently sparse and tests are unstable.
 
 ## Contributing
 
@@ -294,6 +379,7 @@ of the [Global Alliance for Genomics and Health][1] [organization].
 [1]: <https://www.ga4gh.org/>
 [2019 Google Summer of Code]: <https://summerofcode.withgoogle.com/projects/#6613336345542656>
 [Apache License 2.0]: <https://www.apache.org/licenses/LICENSE-2.0>
+[API definition]: TEStribute/specs/schema.TEStribute.openapi.yaml
 [code of conduct]: CODE_OF_CONDUCT.md
 [config]: TEStribute/config/config.yaml
 [contributing guidelines]: CONTRIBUTING.md
@@ -301,9 +387,9 @@ of the [Global Alliance for Genomics and Health][1] [organization].
 [DRS-cli]: <https://github.com/elixir-europe/DRS-cli>
 [ELIXIR Cloud and AAI]: <https://elixir-europe.github.io/cloud/>
 [Git]: <https://git-scm.com/book/en/v2/Getting-Started-Installing-Git>
-[logo banner]: logos/logo-banner.svg
+[logo banner]: images/logo-banner.png
 [mock-TES]: <https://github.com/elixir-europe/mock-TES>
-[modified TES specifications]: <https://github.com/elixir-europe/mock-TES/blob/master/mock_tes/specs/schema.task_execution_service.d55bf88.openapi.modified.yaml>
+[modififications]: <https://github.com/elixir-europe/mock-TES/blob/master/mock_tes/specs/schema.task_execution_service.d55bf88.openapi.modified.yaml>
 [mock-DRS]: <https://github.com/elixir-europe/mock-DRS>
 [`mode.Mode`]: TEStribute/models.py
 [organization]: <https://summerofcode.withgoogle.com/organizations/6643588285333504/>
@@ -313,5 +399,6 @@ of the [Global Alliance for Genomics and Health][1] [organization].
 [semantic versioning]: <https://semver.org/>
 [Task Execution Service]: <https://github.com/ga4gh/task-execution-schemas>
 [TES-cli]: <https://github.com/elixir-europe/TES-cli>
+[TEStribute.models.response]: TEStribute/models/response.py
 [virtualenv]: <https://virtualenv.pypa.io/en/stable/installation/>
-[TEStribute_working]:infographics/TESTribute_working.png
+[TEStribute_working]:images/schema.png
