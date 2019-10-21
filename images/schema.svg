@@ -42,7 +42,7 @@
      id="namedview809"
      showgrid="false"
      inkscape:zoom="0.92226616"
-     inkscape:cx="398.61099"
+     inkscape:cx="207.77671"
      inkscape:cy="-61.694859"
      inkscape:window-x="67"
      inkscape:window-y="27"
@@ -766,7 +766,9 @@
      y="-0.0011216133" />
   <g
      id="g14468"
-     transform="matrix(0.2213792,0,0,0.2213792,98.626291,-328.08083)">
+     transform="matrix(0.2213792,0,0,0.2213792,98.626291,-328.08083)"
+     inkscape:export-xdpi="300"
+     inkscape:export-ydpi="300">
     <rect
        rx="18.058746"
        style="fill:#93d198;fill-opacity:1;stroke:#6fc177;stroke-width:5;stroke-linecap:square;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"

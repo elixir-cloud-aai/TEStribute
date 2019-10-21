@@ -387,7 +387,7 @@ of the [Global Alliance for Genomics and Health][1] [organization].
 [DRS-cli]: <https://github.com/elixir-europe/DRS-cli>
 [ELIXIR Cloud and AAI]: <https://elixir-europe.github.io/cloud/>
 [Git]: <https://git-scm.com/book/en/v2/Getting-Started-Installing-Git>
-[logo banner]: images/logo-banner.svg
+[logo banner]: images/logo-banner.png
 [mock-TES]: <https://github.com/elixir-europe/mock-TES>
 [modififications]: <https://github.com/elixir-europe/mock-TES/blob/master/mock_tes/specs/schema.task_execution_service.d55bf88.openapi.modified.yaml>
 [mock-DRS]: <https://github.com/elixir-europe/mock-DRS>
@@ -401,4 +401,4 @@ of the [Global Alliance for Genomics and Health][1] [organization].
 [TES-cli]: <https://github.com/elixir-europe/TES-cli>
 [TEStribute.models.response]: TEStribute/models/response.py
 [virtualenv]: <https://virtualenv.pypa.io/en/stable/installation/>
-[TEStribute_working]:images/schema.svg
+[TEStribute_working]:images/schema.png
