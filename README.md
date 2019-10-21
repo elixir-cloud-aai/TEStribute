@@ -67,7 +67,7 @@ Ensure you have the following software installed:
 Clone repository and start Docker service
 
 ```bash
-git clone https://github.com/elixir-europe/proTES.git app
+git clone https://github.com/elixir-europe/TEStribute.git app
 cd app
 docker-compose up --build --detach
 ```
