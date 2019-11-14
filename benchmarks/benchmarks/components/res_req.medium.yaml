@@ -1,0 +1,7 @@
+resource_requirements:
+  cpu_cores: 4
+  execution_time_sec: 3600
+  preemptible: true
+  ram_gb: 8
+  disk_gb: 10
+  zones: []

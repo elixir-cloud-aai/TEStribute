@@ -1,0 +1,34 @@
+drs_uris:
+  http://131.152.229.71/ga4gh/drs/v1/:
+  - id: a001
+    name: file_1
+    size: 16700000
+    created: '2018-04-21T00:00:00-00:00'
+    updated: '2018-08-08T16:00:00-05:00'
+    version: '38'
+    mime_type: application/json
+    checksums:
+    - checksum: ''
+      type: md5
+    access_methods:
+    - type: ftp
+      access_url:
+        url: https://www.ensembl.org/
+        headers:
+        - None
+  - id: a002
+    name: file_2
+    size: 3200000000
+    created: '2015-04-21T00:25:43-06:00'
+    updated: '2018-04-21T18:25:43-05:00'
+    version: '1'
+    mime_type: application/json
+    checksums:
+    - checksum: ''
+      type: md5
+    access_methods:
+    - type: ftp
+      access_url:
+        url: https://www.ensembl.org/
+        headers:
+        - None
