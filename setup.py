@@ -15,7 +15,7 @@ if os.path.isfile(req):
 
 setup(
     name="TEStribute",
-    version="0.2.0",
+    version="0.2.1",
     description="Task distribution for GA4GH TES instances",
     long_description=long_description,
     long_description_content_type="text/markdown",

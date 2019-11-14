@@ -1,0 +1,18 @@
+drs_uris:
+  http://193.166.24.114/ga4gh/drs/v1/:
+  - id: a002
+    name: file_2
+    size: 3200000000
+    created: '2015-04-21T00:25:43-06:00'
+    updated: '2018-04-21T18:25:43-05:00'
+    version: '1'
+    mime_type: application/json
+    checksums:
+    - checksum: ''
+      type: md5
+    access_methods:
+    - type: ftp
+      access_url:
+        url: https://www.ncbi.nlm.nih.gov/
+        headers:
+        - None

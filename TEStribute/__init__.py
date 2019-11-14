@@ -18,7 +18,7 @@ from TEStribute.log import (log_yaml, setup_logger)
 log_file = os.path.abspath(
     os.path.join(os.path.dirname(os.path.realpath(__file__)), "log", "testribute.log")
 )
-logger = setup_logger("TEStribute", logging.INFO)
+logger = setup_logger("TEStribute", logging.DEBUG)
 logging.captureWarnings(capture=True)
 
 
@@ -199,15 +199,3 @@ def rank_services(
         **response.to_dict()
     )
     return response
-
-
-# Executed when script is called from command line
-if __name__ == "__main__":
-    response = rank_services()
-    log_yaml(
-        header="=== OUTPUT ===",
-        level=logging.INFO,
-        logger=logger,
-        ranking=response,
-    )
-    # TODO: Do something with response

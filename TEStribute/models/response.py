@@ -77,12 +77,18 @@ class Response:
                 task_info.unit_costs_data_transfer,
             ]
             for item in costs:
-                if item.currency.value == self.target_currency:
+                if item.currency.value == self.target_currency.value:
                     continue
 
                 elif not item.currency.value in self.exchange_rates or \
                     not self.exchange_rates[item.currency.value]:
                     unsupported_currency = True
+                    logger.warning(
+                        f"TES '{tes_uri}' provided costs in currency " \
+                        f"'{item.currency.value}', for which no exchange rate " \
+                        f"to the configured base currency " \
+                        f"'{self.target_currency.value}' is available. Skipped."
+                    )
                     continue
                 
                 # Convert costs to base c
@@ -90,12 +96,6 @@ class Response:
                 item.currency = Currency(target_currency)
             
             if unsupported_currency:
-                logger.warning(
-                    f"TES '{tes_uri}' provided costs in currency " \
-                    f"'{item.currency.value}', for which no exchange rate " \
-                    f"to the configured base currency " \
-                    f"'{self.target_currency.value}' is available. Skipped."
-                )
                 remove_tes.append(tes_uri)
                 continue
         
@@ -411,8 +411,10 @@ class Response:
             # Calculate score
             scores = times_weight + costs_weight
 
-            # Order scores
-            ranks = scores.argsort() + 1
+            # Order scores and reorder ranks
+            order = scores.argsort()
+            ranks = np.empty_like(order)
+            ranks[order] = np.arange(len(scores)) + 1
             self.ranks = ranks.tolist()
         
             # Add scores to instance attributes
@@ -425,7 +427,7 @@ class Response:
                 range(1, len(self.service_combinations) + 1)
             )
             shuffle(self.ranks)
-
+        
         # Rank service combinations
         for index in range(len(self.service_combinations)):
             self.service_combinations[index].rank = self.ranks[index]
