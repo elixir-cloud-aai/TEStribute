@@ -1,0 +1,8 @@
+tes_uris:
+  http://193.166.24.111/ga4gh/tes/v1/:
+    currency: EUR
+    unit_costs:
+      cpu_usage: 0.00020
+      memory_consumption: 0.00020
+      data_storage: 0.2
+      data_transfer: 0.01

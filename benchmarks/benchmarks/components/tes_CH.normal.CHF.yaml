@@ -1,0 +1,9 @@
+tes_uris:
+  http://131.152.229.70/ga4gh/tes/v1/:
+    currency: CHF
+    unit_costs:
+      cpu_usage: 0.00024
+      memory_consumption: 0.00024
+      data_storage: 0.24
+      data_transfer: 0.012
+

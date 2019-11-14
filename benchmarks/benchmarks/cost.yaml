@@ -1,0 +1,78 @@
+object_ids:
+- a001
+- a002
+tes_uris:
+  http://131.152.229.70/ga4gh/tes/v1/:
+    currency: CHF
+    unit_costs:
+      cpu_usage: 0.00024
+      memory_consumption: 0.00024
+      data_storage: 0.24
+      data_transfer: 0.012
+  http://193.166.24.111/ga4gh/tes/v1/:
+    currency: EUR
+    unit_costs:
+      cpu_usage: 0.00020
+      memory_consumption: 0.00020
+      data_storage: 0.2
+      data_transfer: 0.01
+drs_uris:
+  http://131.152.229.71/ga4gh/drs/v1/:
+  - id: a001
+    name: file_1
+    size: 16700000
+    created: '2018-04-21T00:00:00-00:00'
+    updated: '2018-08-08T16:00:00-05:00'
+    version: '38'
+    mime_type: application/json
+    checksums:
+    - checksum: ''
+      type: md5
+    access_methods:
+    - type: ftp
+      access_url:
+        url: https://www.ensembl.org/
+        headers:
+        - None
+  - id: a002
+    name: file_2
+    size: 3200000000
+    created: '2015-04-21T00:25:43-06:00'
+    updated: '2018-04-21T18:25:43-05:00'
+    version: '1'
+    mime_type: application/json
+    checksums:
+    - checksum: ''
+      type: md5
+    access_methods:
+    - type: ftp
+      access_url:
+        url: https://www.ensembl.org/
+        headers:
+        - None
+  http://193.166.24.114/ga4gh/drs/v1/:
+  - id: a002
+    name: file_2
+    size: 3200000000
+    created: '2015-04-21T00:25:43-06:00'
+    updated: '2018-04-21T18:25:43-05:00'
+    version: '1'
+    mime_type: application/json
+    checksums:
+    - checksum: ''
+      type: md5
+    access_methods:
+    - type: ftp
+      access_url:
+        url: https://www.ncbi.nlm.nih.gov/
+        headers:
+        - None
+resource_requirements:
+  cpu_cores: 4
+  execution_time_sec: 3600
+  preemptible: true
+  ram_gb: 8
+  disk_gb: 10
+  zones: []
+mode: 0.1
+jwt: ''
