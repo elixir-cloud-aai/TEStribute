@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
-LOCAL_TESTRIBUTE_IMAGE=${TESTRIBUTE_IMAGE:-docker-registry.default.svc:5000/testribute/testribute}
-LOCAL_HOST_NAME=${TESTRIBUTE_HOST:-testribute-dev-jk.c03.k8s-popup.csc.fi}
+LOCAL_TESTRIBUTE_IMAGE=${TESTRIBUTE_IMAGE:-elixircloud/testribute:latest}
+LOCAL_HOST_NAME=${TESTRIBUTE_HOST:-testribute}
 
 # Helper functions
 function deploy() { # {{{
@@ -28,11 +28,11 @@ items:
       spec:
         containers:
           - image: ${LOCAL_TESTRIBUTE_IMAGE}
-          name: testribute
-          command:
-          - /bin/bash
-          - -c
-          - cd /app/TEStribute; python server.py
+            name: testribute
+            command:
+            - /bin/bash
+            - -c
+            - cd /app/TEStribute; python server.py
 
 - apiVersion: v1
   kind: Service
@@ -94,3 +94,4 @@ while getopts "hd" opt; do
 done
 
 usage
+
