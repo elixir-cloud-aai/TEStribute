@@ -376,8 +376,8 @@ class Response:
 
             # Update time estimate with sum of queue and execution time
             self.service_combinations[index].time_estimate = (
-                self.task_info[tes_uri].estimated_queue_time_sec +
-                self.request.resource_requirements.execution_time_sec
+                float(self.task_info[tes_uri].estimated_queue_time_sec) +
+                float(self.request.resource_requirements.execution_time_sec)
             )
 
 
