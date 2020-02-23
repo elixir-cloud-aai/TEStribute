@@ -27,24 +27,24 @@ def rank_services(
     """
     # Handle JWT
     if "jwt" in kwargs:
-        jwt=kwargs["jwt"]
+        jwt = kwargs["jwt"]
     else:
-        jwt=None
+        jwt = None
     # Rank services
     try:
-        return rank(
+        return Response(rank(
             object_ids=body.get("object_ids"),
             drs_uris=body.get("drs_uris"),
             mode=body.get("mode"),
             resource_requirements=body.get("resource_requirements"),
             tes_uris=body.get("tes_uris"),
             jwt=jwt,
-        ).to_dict()
+        ).to_dict())
     except ValidationError as e:
-        raise BadRequest(e.args) from e
+        raise BadRequest(str(e.args)) from e
     except ResourceUnavailableError as e:
-        raise BadRequest(e.args) from e
+        raise BadRequest(str(e.args)) from e
     except Unauthorized as e:
-        raise Unauthorized(e.args) from e
+        raise Unauthorized(str(e.args)) from e
     except Exception as e:
-        raise InternalServerError(e.args) from e
+        raise InternalServerError(str(e.args)) from e

@@ -24,12 +24,19 @@ def config_parser(
     try:
         with open(default_path) as f:
             config = yaml.safe_load(f)
+            if not isinstance(config, dict):
+                logger.error(
+                    f"Config file '{default_path}' not of key -> value type."
+                    "Execution aborted. "
+                )
+                raise TypeError
             logger.debug("Config loaded from" + default_path)
     except (FileNotFoundError, PermissionError) as e:
         logger.error(
-            f"Config file not found. Ensure that default config file is "
+            "Config file not found. Ensure that default config file is "
             f"available and accessible at '{default_path}'."
-            f"Execution aborted. "
+            "Execution aborted. "
             f"Original error message: {type(e).__name__}: {e}"
         )
+        raise
     return config

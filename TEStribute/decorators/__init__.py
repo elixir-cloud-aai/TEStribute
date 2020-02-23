@@ -4,7 +4,7 @@ from connexion import request
 from flask import current_app
 from functools import wraps
 import logging
-from typing import (Callable, Optional)
+from typing import Callable
 
 from werkzeug.exceptions import Unauthorized
 
@@ -22,8 +22,8 @@ def auth_token_optional(fn: Callable) -> Callable:
     def wrapper(*args, **kwargs):
 
         # Check if authentication is enabled
-        if current_app.config["security"]["authorization_required"]:
-
+        security_conf = current_app.config["security"]  # type: ignore
+        if security_conf["authorization_required"]:
             try:
                 jwt = JWT(request=request)
             except Exception as e:
@@ -51,7 +51,7 @@ def log_exception(
 ) -> Callable:
     """
     When attached to an error handler, logs every error caught by the handler.
- 
+
     :param logger: Logger object.
     """
 
@@ -69,5 +69,5 @@ def log_exception(
             return fn(*args, **kwargs)
 
         return wrapper
-    
+
     return decorator

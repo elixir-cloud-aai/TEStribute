@@ -19,10 +19,10 @@ def main():
     # Instantiate argument parser
     parser = argparse.ArgumentParser(
         description="""Task distribution for GA4GH TES instances.
-        
+
         Given a list of TES instances and a set of task resource requirements,
-        TES instances are ranked by time and/or cost considerations. Optionally,
-        the location of input objects can be taken into account."""
+        TES instances are ranked by time and/or cost considerations.
+        Optionally, the location of input objects can be taken into account."""
     )
 
     # Create argument groups
@@ -33,7 +33,7 @@ def main():
         "--tes-uri",
         action="append",
         help=(
-            "URI of known TES instances that the task may be computed on. " \
+            "URI of known TES instances that the task may be computed on. "
             "Argument can be specified multiple times."
         ),
         type=str,
@@ -81,7 +81,7 @@ def main():
         "--object-id",
         action="append",
         help=(
-            "DRS ID of object required by the task. Argument can be " \
+            "DRS ID of object required by the task. Argument can be "
             "specified multiple times."
         ),
         type=str,
@@ -92,8 +92,8 @@ def main():
         "--drs-uri",
         action="append",
         help=(
-            "URI of known DRS instance that objects may be read from or " \
-            "written to. Required if at least one `--object_id` is " \
+            "URI of known DRS instance that objects may be read from or "
+            "written to. Required if at least one `--object_id` is "
             "specified. Argument can be specified multiple times."
         ),
         type=str,
@@ -103,11 +103,11 @@ def main():
     parser.add_argument(
         "-m", "--mode",
         help=(
-            "Mode with which service combinations are ranked. Services can " \
-            "be ranked by either 'cost', 'time' or both. For the latter, " \
-            "specify a number between 0 and 1, with the boundaries " \
-            "representing weights at which services are ranked entirely by " \
-            "cost and time, respectively. It is also possible to randomize " \
+            "Mode with which service combinations are ranked. Services can "
+            "be ranked by either 'cost', 'time' or both. For the latter, "
+            "specify a number between 0 and 1, with the boundaries "
+            "representing weights at which services are ranked entirely by "
+            "cost and time, respectively. It is also possible to randomize "
             "rankings (specify 'random' or -1)."
         ),
         default=0.5,
@@ -118,7 +118,7 @@ def main():
         action='version',
         version="%(prog)s 0.2.1"
     )
-     
+
     # Parse arguments
     args = parser.parse_args()
 
@@ -139,19 +139,20 @@ def main():
             object_ids=args.object_id,
             drs_uris=args.drs_uri,
             tes_uris=args.tes_uri,
-            resource_requirements= {
-                "cpu_cores":args.cpu_cores,
-                "disk_gb":args.disk_gb,
-                "execution_time_sec":args.execution_time_sec,
-                "ram_gb":args.ram_gb,
+            resource_requirements={
+                "cpu_cores": args.cpu_cores,
+                "disk_gb": args.disk_gb,
+                "execution_time_sec": args.execution_time_sec,
+                "ram_gb": args.ram_gb,
             }
         )
     except Exception as e:
         logger.error(f"{type(e).__name__}: {e}")
         sys.exit(1)
-    
+
     # Print output
     sys.stdout.write(json.dumps(response.to_dict()))
+
 
 if __name__ == "__main__":
     main()
