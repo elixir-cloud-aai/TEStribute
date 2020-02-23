@@ -15,6 +15,7 @@ Click==7.0
 clickclick==1.2.2
 connexion==2.3.0
 constantly==15.1.0
+coverage==5.0.3
 crochet==1.10.0
 cryptography==2.7
 cssselect==1.0.3
@@ -22,7 +23,9 @@ decorator==4.4.0
 dicttoxml==1.7.4
 docutils==0.15.2
 drs-client==0.2.0
+entrypoints==0.3
 fido==4.2.2
+flake8==3.7.9
 Flask==1.1.1
 forex-python==1.5
 future==0.17.1
@@ -60,6 +63,7 @@ pluggy==0.12.0
 py==1.8.0
 pycodestyle==2.5.0
 pycparser==2.19
+pyflakes==2.1.1
 Pygments==2.4.2
 PyHamcrest==1.9.0
 PyJWT==1.6.4
