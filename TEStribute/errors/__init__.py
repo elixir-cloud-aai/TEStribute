@@ -3,7 +3,6 @@ Custom errors, error handler functions and function to register error handlers
 with a Connexion app instance.
 """
 import logging
-from typing import (Type, Union)
 
 from connexion import App
 from connexion.exceptions import ExtraParameterProblem
@@ -19,17 +18,29 @@ logger = logging.getLogger("TEStribute")
 def register_error_handlers(app: App) -> App:
     """Adds custom handlers for exceptions to Connexion app instance."""
     # Add error handlers
-    app.add_error_handler(BadRequest, handle_bad_request)
-    app.add_error_handler(ExtraParameterProblem, handle_bad_request)
-    app.add_error_handler(InternalServerError, handle_internal_server_error)
-    app.add_error_handler(Unauthorized, handle_unauthorized)
+    app.add_error_handler(  # type: ignore
+        BadRequest,
+        handle_bad_request,
+    )
+    app.add_error_handler(  # type: ignore
+        ExtraParameterProblem,
+        handle_bad_request,
+    )
+    app.add_error_handler(  # type: ignore
+        InternalServerError,
+        handle_internal_server_error,
+    )
+    app.add_error_handler(  # type: ignore
+        Unauthorized,
+        handle_unauthorized,
+    )
     logger.info('Registered custom error handlers with Connexion app.')
 
     # Workaround for adding a custom handler for `connexion.problem` responses
     # Responses from request and paramater validators are not raised and
     # cannot be intercepted by `add_error_handler`; see here:
     # https://github.com/zalando/connexion/issues/138
-    @app.app.after_request
+    @app.app.after_request  # type: ignore
     def _rewrite_bad_request(response: Response) -> Response:
         if (
             response.status_code == 400 and
@@ -47,24 +58,32 @@ class ValidationError(Exception):
     """Error raised for invalid input parameters."""
 
     def __init__(self, description: str, **kwargs):
-        super(ValidationError, self).__init__(description, **kwargs)
+        super(  # type: ignore
+            ValidationError,
+            self
+        ).__init__(description, **kwargs)
+
 
 class ResourceUnavailableError(Exception):
     """Error raised if a required resource is unavailable."""
 
     def __init__(self, description: str, **kwargs):
-        super(ResourceUnavailableError, self).__init__(description, **kwargs)
+        super(  # type: ignore
+            ResourceUnavailableError,
+            self
+        ).__init__(description, **kwargs)
 
 
 @log_exception()
 def handle_bad_request_validation(exception: Response) -> Response:
     return Response(
         response=dumps({
-            'code': int(exception.status_code),
+            'code': int(exception.status_code),  # type: ignore
             'errors': [{
-                'reason': exception.json["title"].replace(" ", ""),
+                'reason': exception.json["title"].  # type: ignore
+                replace(" ", ""),
                 'message': [
-                    exception.json["detail"],
+                    exception.json["detail"],  # type: ignore
                 ],
             }],
             'message': "The request caused an error.",

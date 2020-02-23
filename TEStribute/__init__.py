@@ -5,18 +5,20 @@ import logging
 import os
 from typing import (Iterable, Mapping, Optional, Union)
 
-from werkzeug.exceptions import Unauthorized
 
 from TEStribute import models
 import TEStribute.models.request as rq
 import TEStribute.models.response as rs
 from TEStribute.config import config_parser
-from TEStribute.errors import ValidationError
 from TEStribute.log import (log_yaml, setup_logger)
 
 # Set up logging
 log_file = os.path.abspath(
-    os.path.join(os.path.dirname(os.path.realpath(__file__)), "log", "testribute.log")
+    os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        "log",
+        "testribute.log"
+    )
 )
 logger = setup_logger("TEStribute", logging.DEBUG)
 logging.captureWarnings(capture=True)
@@ -93,28 +95,20 @@ def rank_services(
         resource_requirements=resource_requirements,
         tes_uris=tes_uris,
     )
-    try:
-        request = rq.Request(
-            object_ids=object_ids,
-            drs_uris=drs_uris,
-            mode=mode,        
-            resource_requirements=models.ResourceRequirements(
-                **resource_requirements
-            ),
-            tes_uris=tes_uris,
-            authorization_required=config["security"]["authorization_required"],
-            jwt=jwt,
-            jwt_config=config["security"]["jwt"],
-        )
-    except Unauthorized:
-        raise
-
-    # Validate input parameters
+    request = rq.Request(
+        object_ids=object_ids,
+        drs_uris=drs_uris,
+        mode=mode,
+        resource_requirements=models.ResourceRequirements(
+            **resource_requirements
+        ),
+        tes_uris=tes_uris,
+        authorization_required=config["security"]
+        ["authorization_required"],
+        jwt=jwt,
+        jwt_config=config["security"]["jwt"],
+    )
     logger.debug("=== VALIDATION ===")
-    try:
-        request.validate()
-    except ValidationError:
-        raise
     log_yaml(
         level=logging.DEBUG,
         logger=logger,

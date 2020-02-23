@@ -1,10 +1,9 @@
-"""
-Classes and functions for dealing with the processing of JSON Web Tokens (JWTs).
+"""Classes and functions for dealing with the processing of JSON Web Tokens
+(JWTs).
 """
 from enum import Enum
 from functools import partial
 import json
-from os import get_inheritable
 import requests
 from simplejson.errors import JSONDecodeError
 from typing import (Dict, List, Union)
@@ -14,11 +13,9 @@ from werkzeug.exceptions import Unauthorized
 
 
 class JWT:
+    """Class that extracts JSON Web Tokens (JWT) and related information from
+    a HTTP request and validates the JWT via one or more methods.
     """
-    Class that extracts JSON Web Tokens (JWT) and related information from a 
-    HTTP request and validates the JWT via one or more methods.
-    """
-
     # Class attributes (can be updated through JWT.config(**kwargs))
     auth_header_key: str = "Authorization"
     claim_identity: str = "sub"
@@ -31,19 +28,17 @@ class JWT:
     jwt_prefix: str = "Bearer"
     validation_methods: List[str] = ["userinfo", "public_key"]
 
-
     # Class methods
     @classmethod
     def config(cls, **kwargs) -> None:
         for k, v in kwargs.items():
             setattr(cls, k, v)
 
-
     # Constructors
     def __init__(
-        self, 
+        self,
         jwt: Union[None, str] = None,
-        request: Union[None, requests.models.Request] = None,
+        request: Union[None, requests.models.Request] = None,  # type: ignore
         user: str = "",
         claims: Dict = {},
         header_claims: Dict = {},
@@ -52,12 +47,13 @@ class JWT:
         current_key: str = "",
     ) -> None:
         """
-#        Constructs JWT class instance by parsing the JWT from a HTTP request 
+#        Constructs JWT class instance by parsing the JWT from a HTTP request
 #        header.
 #
 #        :param request: HTTP request. Instance of `requests.models.Request`.
 #        :param header_key: Key/name of header item that contains the JWT.
-#        :param prefix: Prefix separated from JWT by whitespace, e.g., "Bearer".
+#        :param prefix: Prefix separated from JWT by whitespace, e.g.,
+#                "Bearer".
 #
 #        :return: JWT.
 #
@@ -71,7 +67,7 @@ class JWT:
         # JWT not passed and cannot be extracted
         if jwt is None and request is None:
             raise ValueError(
-                "Either a JWT or a request object with a header containg a " \
+                "Either a JWT or a request object with a header containg a "
                 "JWT needs to be passed to the constructor."
             )
 
@@ -80,11 +76,14 @@ class JWT:
 
             # Get authorization header
             try:
-                auth_header = request.headers.get(self.auth_header_key, None)
+                auth_header = request.headers.get(  # type: ignore
+                    self.auth_header_key,
+                    None
+                )
             except AttributeError:
                 raise AttributeError(
-                    "Agument passed to parameter 'request' does not look loke a " \
-                    "valid HTTP request."
+                    "Agument passed to parameter 'request' does not look loke "
+                    "a valid HTTP request."
                 )
 
             if auth_header is None:
@@ -97,30 +96,30 @@ class JWT:
                 (found_prefix, jwt) = auth_header.split()
             except ValueError:
                 raise ValueError(
-                    "Authentication header is malformed, prefix and JWT expected."
+                    "Authentication header is malformed, prefix and JWT "
+                    "expected."
                 )
 
             # Ensure that prefix is correct
             if found_prefix != self.jwt_prefix:
                 raise ValueError(
-                    f"Expected JWT prefix '{self.jwt_prefix}' in authentication " \
-                    f"header, but found '{found_prefix}' instead."
+                    f"Expected JWT prefix '{self.jwt_prefix}' in "
+                    f"authentication header, but found '{found_prefix}' "
+                    "instead."
                 )
 
         # Initialize instance
         self.jwt = jwt
-        self.user = user 
+        self.user = user
         self.claims = claims
         self.header_claims = header_claims
         self.idp_config = idp_config
         self.public_keys = public_keys
         self.current_key = current_key
 
-
-    # Other methods
     def get_claims(
         self,
-        force: bool=False,
+        force: bool = False,
     ) -> None:
         """
 #
@@ -134,14 +133,13 @@ class JWT:
                 )
             except Exception as e:
                 raise Unauthorized(
-                    f"JWT could not be decoded. Original error message: " \
+                    "JWT could not be decoded. Original error message: "
                     f"{type(e).__name__}: {e}"
                 ) from e
 
-
     def get_header_claims(
         self,
-        force: bool=False,
+        force: bool = False,
     ) -> None:
         """
 #
@@ -151,26 +149,26 @@ class JWT:
                 self.header_claims = get_unverified_header(self.jwt)
             except Exception as e:
                 raise Exception(
-                    f"Could not extract JWT header claims. Original error " \
+                    "Could not extract JWT header claims. Original error "
                     f"message: {type(e).__name__}: {e}"
                 ) from e
-
 
     def get_idp_config(
         self,
         force: bool = False,
     ) -> None:
         """
-#        Retrieves an OpenID Connect (OIDC) identity provider's (IdP) service info 
-#        based on a JSON Web Token's (JWT) issuer claim.
+#        Retrieves an OpenID Connect (OIDC) identity provider's (IdP) service
+#        info based on a JSON Web Token's (JWT) issuer claim.
 #
-#        :param issuer: JWT issuer claim and base URL for service info endpoint.
+#        :param issuer: JWT issuer claim and base URL for service info
+#                endpoint.
 #        :param suffix: URL suffix for IdP service info endpoint.
 #
 #        :returns: Dictionary of IdP service info/configuration.
 #
-#        :raises KeyError: Response is valid JSON but does not contain information
-#                required by OIDC standard.
+#        :raises KeyError: Response is valid JSON but does not contain
+#                information required by OIDC standard.
 #        :raises requests.exceptions.ConnectionError: Not very well defined.
 #        :raises requests.exceptions.HTTPError: Not very well defined.
 #        :raises requests.exceptions.MissingSchema: Compiled URL cannot be
@@ -190,7 +188,7 @@ class JWT:
                 root = self.claims[self.claim_issuer].rstrip('/')
             except KeyError as e:
                 raise KeyError(
-                    f"Issuer '{self.claim_issuer}' is not available. " \
+                    f"Issuer '{self.claim_issuer}' is not available. "
                     f"Original error message: {type(e).__name__}: {e}"
                 ) from e
             url = f"{root}/{self.idp_config_url_suffix}"
@@ -199,13 +197,13 @@ class JWT:
             try:
                 response = requests.get(url)
                 response.raise_for_status()
-            except requests.exceptions.MissingSchema as e:
-                raise requests.exceptions.MissingSchema(
+            except requests.exceptions.MissingSchema as e:  # type: ignore
+                raise requests.exceptions.MissingSchema(  # type: ignore
                     f"Value '{url} could not be interpreted as URL."
                 ) from e
-            except requests.exceptions.ConnectionError:
+            except requests.exceptions.ConnectionError:  # type: ignore
                 raise
-            except requests.exceptions.HTTPError:
+            except requests.exceptions.HTTPError:  # type: ignore
                 raise
 
             # Convert JSON response to dictionary
@@ -217,8 +215,7 @@ class JWT:
                 ) from e
 
             # Set IdP config
-            self.idp_config = response
-
+            self.idp_config = response  # type: ignore
 
     def get_public_keys(
         self,
@@ -239,19 +236,19 @@ class JWT:
             try:
                 url = self.idp_config[self.idp_config_jwks]
             except KeyError as e:
-                raise KeyError (
-                    f"Field '{self.idp_config_jwks}' not available in " \
-                    f"identity provider's config. Original error message: " \
+                raise KeyError(
+                    f"Field '{self.idp_config_jwks}' not available in "
+                    f"identity provider's config. Original error message: "
                     f"{type(e).__name__}: {e}"
                 ) from e
-        
+
             # Get JWK sets from identity provider
             try:
                 response = requests.get(url)
                 response.raise_for_status()
             except Exception as e:
                 raise Exception(
-                    f"Could not connect to endpoint '{url}'. Original error " \
+                    f"Could not connect to endpoint '{url}'. Original error "
                     f"message: {type(e).__name__}: {e}"
                 ) from e
 
@@ -263,18 +260,17 @@ class JWT:
                         from_jwk(json.dumps(jwk))
             except KeyError as e:
                 raise KeyError(
-                    f"Public keys could not be processed. Original error " \
+                    f"Public keys could not be processed. Original error "
                     f"message: {type(e).__name__}: {e}"
                 ) from e
             self.public_keys = keys
-
 
     def get_current_key(
         self,
         force: bool = False,
     ) -> None:
         """
-        
+
         """
         if not self.current_key or force:
 
@@ -284,7 +280,7 @@ class JWT:
             except Exception:
                 raise
 
-            # Get JWT header claims 
+            # Get JWT header claims
             try:
                 self.get_header_claims(force=force)
             except Exception:
@@ -294,42 +290,42 @@ class JWT:
             try:
                 key_id_used = self.header_claims[self.claim_key_id]
             except KeyError as e:
-                f"Key ID claim '{self.claim_key_id}' is not available in " \
-                f"JWT. Original error message: {type(e).__name__}: {e}"
+                raise KeyError(
+                    f"Key ID claim '{self.claim_key_id}' is not available in "
+                    f"JWT. Original error message: {type(e).__name__}: {e}"
+                )
 
-            # Set JWT public key 
+            # Set JWT public key
             try:
                 self.current_key = self.public_keys[key_id_used]
             except KeyError as e:
                 raise KeyError(
-                    f"Key used in JWT not available in issuer's JWK sets. " \
+                    "Key used in JWT not available in issuer's JWK sets. "
                     f"Original error message: {type(e).__name__}: {e}"
                 ) from e
-
 
     def validate(
         self,
         force: bool = False,
     ) -> None:
         """
-        
+
         """
         for method in self.validation_methods:
             try:
                 ValidationMethods[method].value(self, force=force)
             except Exception as e:
                 raise ValueError(
-                    f"Validation of JWT by method '{method}' failed. " \
+                    f"Validation of JWT by method '{method}' failed. "
                     f"Original error message: {type(e).__name__}: {e}"
                 ) from e
-
 
     def get_user_info(
         self,
         force: bool = False,
     ) -> None:
         """
-        
+
         """
         # Get IdP config
         try:
@@ -341,12 +337,12 @@ class JWT:
         try:
             url = self.idp_config[self.idp_config_userinfo]
         except KeyError as e:
-            raise KeyError (
-                f"Field '{self.idp_config_userinfo}' not available in " \
-                f"identity provider's config. Original error message: " \
+            raise KeyError(
+                f"Field '{self.idp_config_userinfo}' not available in "
+                "identity provider's config. Original error message: "
                 f"{type(e).__name__}: {e}"
             ) from e
-        
+
         # Build headers
         headers = {
             f"{self.auth_header_key}": f"{self.jwt_prefix} {self.jwt}"
@@ -363,7 +359,6 @@ class JWT:
             raise
         self.user_info = response
 
-    
     def validate_signature(
         self,
         force: bool = False,
@@ -373,7 +368,7 @@ class JWT:
             self.get_current_key(force=force)
         except Exception:
             raise
-        
+
         try:
             response = decode(
                 jwt=self.jwt,
@@ -383,20 +378,19 @@ class JWT:
             )
         except Exception as e:
             raise Exception(
-                f"JWT could not be decoded. Original error message: " \
+                f"JWT could not be decoded. Original error message: "
                 f"{type(e).__name__}: {e}"
             ) from e
-        
+
         if update_claims:
             self.claims = response
-
 
     def get_user(
         self,
         force: bool = False,
     ):
         """
-    
+
         """
         if not self.user or force:
 
@@ -410,8 +404,10 @@ class JWT:
             try:
                 self.user = self.claims[self.claim_identity]
             except KeyError as e:
-                f"Key ID claim '{self.claim_identity}' is not available in " \
-                f"JWT. Original error message: {type(e).__name__}: {e}"
+                raise Exception(
+                    f"Key ID claim '{self.claim_identity}' is not available "
+                    f"in JWT. Original error message: {type(e).__name__}: {e}"
+                )
 
 
 class ValidationMethods(Enum):

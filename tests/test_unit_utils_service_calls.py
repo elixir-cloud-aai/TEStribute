@@ -54,5 +54,5 @@ def test_ip_distance_same_ip():
 
 def test_ip_distance_mixed():
     ret = ip_distance(IP_1, IP_2, DOMAIN)
-    print(ret)
-    assert ret['distances'] == {}
+    assert ret['distances'][(IP_1, IP_2)] > 0
+

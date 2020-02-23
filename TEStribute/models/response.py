@@ -36,7 +36,7 @@ class Response:
     """
     def __init__(
         self,
-        request = rq.Request,
+        request=rq.Request,
         timeout: float = 3,
         target_currency: Currency = Currency.BTC,
     ) -> None:
@@ -80,25 +80,27 @@ class Response:
                 if item.currency.value == self.target_currency.value:
                     continue
 
-                elif not item.currency.value in self.exchange_rates or \
-                    not self.exchange_rates[item.currency.value]:
+                elif item.currency.value not in self.exchange_rates or \
+                        not self.exchange_rates[item.currency.value]:
                     unsupported_currency = True
                     logger.warning(
-                        f"TES '{tes_uri}' provided costs in currency " \
-                        f"'{item.currency.value}', for which no exchange rate " \
-                        f"to the configured base currency " \
-                        f"'{self.target_currency.value}' is available. Skipped."
+                        f"TES '{tes_uri}' provided costs in currency "
+                        f"'{item.currency.value}', for which no exchange rate "
+                        "to the configured base currency "
+                        f"'{self.target_currency.value}' is available. "
+                        "Skipped."
                     )
                     continue
-                
-                # Convert costs to base c
-                item.amount /= self.exchange_rates[item.currency.value]
+
+                # Convert costs to base currency
+                val = self.exchange_rates[item.currency.value]
+                item.amount = item.amount / val  # type: ignore
                 item.currency = Currency(target_currency)
-            
+
             if unsupported_currency:
                 remove_tes.append(tes_uri)
                 continue
-        
+
         # Remove TES instances that provide costs that cannot be compared
         for tes_uri in remove_tes:
             del self.task_info[tes_uri]
@@ -117,13 +119,13 @@ class Response:
         # Determine object sizes
         self.object_sizes: Dict[str, int] = {}
         object_sizes: Dict[str, Set[int]] = {}
-        for object_id, val in self.object_info.items():
+        for object_id, val in self.object_info.items():  # type: ignore
             object_sizes[object_id] = set()
-            for drs_object in val.values():
+            for drs_object in val.values():  # type: ignore
                 object_sizes[object_id].add(drs_object.size)
         self.object_sizes = {
-            object_id: int(list(sizes)[0]) 
-                for object_id, sizes in object_sizes.items()
+            object_id: int(list(sizes)[0])
+            for object_id, sizes in object_sizes.items()
         }
 
         # Get combinations of access URIs for TES instances and objects
@@ -135,19 +137,18 @@ class Response:
         # Add service combinations
         self.service_combinations: List[ServiceCombination] = []
         for access_uris in self.access_uri_combinations:
-                self.service_combinations.append(
-                    ServiceCombination(
-                        access_uris=access_uris,
-                        cost_estimate=Costs(
-                            amount=-1,
-                            currency=self.target_currency,
-                        ),
-                        rank=-1,
-                        time_estimate=-1,
-                    )
+            self.service_combinations.append(
+                ServiceCombination(
+                    access_uris=access_uris,
+                    cost_estimate=Costs(
+                        amount=-1,
+                        currency=self.target_currency,
+                    ),
+                    rank=-1,
+                    time_estimate=-1,
                 )
+            )
         self.service_combinations_sorted = self.service_combinations
-
 
     def to_dict(self) -> Dict:
         """Return instance attributes as dictionary."""
@@ -157,7 +158,6 @@ class Response:
             ],
             "warnings": self.warnings,
         }
-
 
     @staticmethod
     def get_access_uri_combinations(
@@ -182,7 +182,7 @@ class Response:
                 for access_method in object_metadata.access_methods:
                     object_uris.append(access_method.access_url.url)
             access_uris[object_id] = set(object_uris)
-        
+
         # Add TES URIs
         access_uris["tes_uri"] = set(task_info.keys())
 
@@ -195,7 +195,6 @@ class Response:
 
         # Return list of combinations
         return uri_combinations
-
 
     def get_distances(
         self,
@@ -252,14 +251,14 @@ class Response:
 
         # Create unique set of IP pairs
         ips_unique: Dict[Set[str], List[Tuple[int, str]]] = {
-            v: [] for v in ips.values()
+            v: [] for v in ips.values()  # type: ignore
         }
         for k, v in ips.items():
-            ips_unique[v].append(k)
+            ips_unique[v].append(k)  # type: ignore
 
         # Calculate distances between all IPs
         distances_unique: Dict[Set[str], float] = {}
-        ips_all = frozenset().union(*list(ips_unique.keys()))
+        ips_all = frozenset().union(*list(ips_unique.keys()))  # type: ignore
         try:
             self.distances_full = ip_distance(*ips_all)
         except ValueError:
@@ -286,21 +285,21 @@ class Response:
         self.distances = [
             deepcopy({}) for i in range(len(self.access_uri_combinations))
         ]
-        for ip_set, combinations in ips_unique.items():
+        for ip_set, combinations in ips_unique.items():  # type: ignore
             for combination in combinations:
                 try:
                     self.distances[combination[0]][combination[1]] = \
                         distances_unique[ip_set]
                 except KeyError:
                     pass
-        
+
         # Check for and remove service combinations for which no distances
         # are available
         for index in reversed(range(len(self.distances))):
             if len(self.distances[index]) != len(self.request.object_ids):
                 warning = (
-                    f"The following service combination was removed because " \
-                    f"no or not all distances could be computed: " \
+                    "The following service combination was removed because "
+                    "no or not all distances could be computed: "
                     f"{self.service_combinations[index].access_uris.to_dict()}"
                 )
                 self.warnings.append(warning)
@@ -313,7 +312,6 @@ class Response:
         for combination in self.distances:
             combination['total'] = sum(combination.values())
 
-
     def filter_service_combinations(
         self,
     ) -> None:
@@ -324,7 +322,6 @@ class Response:
             raise ResourceUnavailableError(
                 "No valid service combinations available."
             )
-
 
     def estimate_costs(
         self,
@@ -359,7 +356,6 @@ class Response:
                 costs_transfer
             )
 
-
     def estimate_times(
         self,
     ) -> None:
@@ -380,7 +376,6 @@ class Response:
                 float(self.request.resource_requirements.execution_time_sec)
             )
 
-
     def rank_combinations(
         self,
     ) -> None:
@@ -391,7 +386,7 @@ class Response:
 
         # Calculate scores and ranks
         if mode >= 0:
-        
+
             # Get all time estimates
             times = np.array([
                 combination.time_estimate for combination in
@@ -414,9 +409,9 @@ class Response:
             # Order scores and reorder ranks
             order = scores.argsort()
             ranks = np.empty_like(order)
-            ranks[order] = np.arange(len(scores)) + 1
-            self.ranks = ranks.tolist()
-        
+            ranks[order] = np.arange(len(scores)) + 1  # type: ignore
+            self.ranks = ranks.tolist()  # type: ignore
+
             # Add scores to instance attributes
             self.scores = scores.tolist()
 
@@ -427,11 +422,11 @@ class Response:
                 range(1, len(self.service_combinations) + 1)
             )
             shuffle(self.ranks)
-        
+
         # Rank service combinations
         for index in range(len(self.service_combinations)):
             self.service_combinations[index].rank = self.ranks[index]
-        
+
         # Add sorted list of service combinations
         self.service_combinations_sorted = sorted(
             self.service_combinations, key=lambda k: k.rank

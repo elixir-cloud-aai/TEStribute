@@ -55,6 +55,7 @@ class Currency(enum.Enum):
     USD = "USD"
     ZAR = "ZAR"
 
+
 class Mode(enum.Enum):
     """
     Enumerator class for different TEStribute run modes.
@@ -77,13 +78,12 @@ class AccessUris:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-
     def to_dict(self) -> Dict:
         """Return instance attributes as dictionary."""
         _excluded_keys = set(AccessUris.__dict__.keys())
         return dict(
             (key, value) for (key, value) in self.__dict__.items()
-                if key not in _excluded_keys
+            if key not in _excluded_keys
         )
 
 
@@ -98,7 +98,6 @@ class AccessUrl:
     ) -> None:
         self.url = url
         self.headers = headers
-
 
     def to_dict(self) -> Dict:
         """Return instance attributes as dictionary."""
@@ -124,7 +123,6 @@ class AccessMethod:
         self.access_id = access_id
         self.region = region
 
-
     def to_dict(self) -> Dict:
         """Return instance attributes as dictionary."""
         return {
@@ -143,7 +141,6 @@ class Checksum:
     ) -> None:
         self.checksum = checksum
         self.type = type
-
 
     def to_dict(self) -> Dict:
         """Return instance attributes as dictionary."""
@@ -164,7 +161,6 @@ class Costs:
     ) -> None:
         self.amount = amount
         self.currency = currency
-
 
     def to_dict(self) -> Dict:
         """Return instance attributes as dictionary."""
@@ -204,7 +200,6 @@ class DrsObject:
         self.description = description
         self.aliases = aliases
 
-
     def to_dict(self) -> Dict:
         """Return instance attributes as dictionary."""
         return {
@@ -242,7 +237,6 @@ class ResourceRequirements:
         self.preemptible = preemptible
         self.zones = zones
 
-
     def to_dict(self) -> Dict:
         """Return instance attributes as dictionary."""
         return {
@@ -257,7 +251,7 @@ class ResourceRequirements:
 
 class ServiceCombination:
     """
-    A combination of TES and input DRS object access URIs together with 
+    A combination of TES and input DRS object access URIs together with
     cost/time estimates and a rank.
     """
     def __init__(
@@ -272,7 +266,6 @@ class ServiceCombination:
         self.rank = rank
         self.time_estimate = time_estimate
 
-
     def to_dict(self) -> Dict:
         """Return instance attributes as dictionary."""
         return {
@@ -285,7 +278,7 @@ class ServiceCombination:
 
 class TaskInfo:
     """
-    Schema to represent a task's estimated estimated queue time and total 
+    Schema to represent a task's estimated estimated queue time and total
     incurred costs.
     """
     def __init__(
@@ -300,13 +293,13 @@ class TaskInfo:
         self.unit_costs_data_transfer = unit_costs_data_transfer
         self.estimated_queue_time_sec = estimated_queue_time_sec
 
-
     def to_dict(self) -> Dict:
         """Return instance attributes as dictionary."""
         return {
             "estimated_compute_costs": self.estimated_compute_costs.to_dict(),
             "estimated_storage_costs": self.estimated_storage_costs.to_dict(),
-            "unit_costs_data_transfer": self.unit_costs_data_transfer.to_dict(),
+            "unit_costs_data_transfer": self.unit_costs_data_transfer.
+            to_dict(),
             "estimated_queue_time_sec": self.estimated_queue_time_sec,
         }
 

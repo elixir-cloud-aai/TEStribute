@@ -34,10 +34,10 @@ def configure_app(app: App) -> App:
 
 def add_settings(app: App) -> App:
     """Add settings to app instance"""
-    app.host = config["server"]["host"]
-    app.port = config["server"]["port"]
-    app.debug = config["server"]["debug"]
-    app.app.config.update(config)
+    app.host = config["server"]["host"]  # type: ignore
+    app.port = config["server"]["port"]  # type: ignore
+    app.debug = config["server"]["debug"]  # type: ignore
+    app.app.config.update(config)  # type: ignore
     return app
 
 
@@ -54,7 +54,7 @@ def add_openapi(app: App) -> App:
     if config["security"]["authorization_required"]:
         path = add_security_definitions(in_file=path)
         JWT.config(**config["security"]["jwt"])
-    app.add_api(
+    app.add_api(  # type: ignore
         path,
         validate_responses=True,
         strict_validation=True
@@ -96,8 +96,8 @@ security:
 def main(app: App) -> None:
     """Initialize, configure and run server"""
     app = configure_app(app)
-    app.run()
+    app.run()  # type: ignore
 
 
 if __name__ == "__main__":
-    main(app)
+    main(app)  # type: ignore

@@ -1,0 +1,26 @@
+os:
+  - linux
+dist: bionic
+language: python
+python:
+  - "3.6"
+  - "3.7"
+  - "3.8"
+
+services:
+  - docker
+
+if: type != pull_request  # do not build anything for PRs
+
+install:
+  - pip install -e .
+
+script:
+  - mypy TEStribute setup.py --ignore-missing-imports
+  - flake8 TEStribute setup.py
+  - pytest --disable-warnings
+
+matrix:
+  allow_failures:
+    - python: "3.8"
+
