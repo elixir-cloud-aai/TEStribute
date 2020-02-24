@@ -1,16 +1,12 @@
 """
 Integration tests for `TEStribute`.
 """
-import pytest
-
 from TEStribute import rank_services
 
 # Test parameters
 OBJECT_IDS = [
     "a001",
     "a002",
-#    "a003",
-#    "a004"
 ]
 RESOURCE_REQUIREMENTS = {
     "cpu_cores": "2",

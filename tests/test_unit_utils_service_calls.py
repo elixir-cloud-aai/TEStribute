@@ -2,10 +2,7 @@
 Unit tests for IP distance calculation function
 `TEStribute.distance.ip_distance()`.
 """
-from socket import gaierror
-
 import pytest
-from ip2geotools.errors import InvalidRequestError
 
 from TEStribute.utils.service_calls import ip_distance
 
@@ -55,4 +52,3 @@ def test_ip_distance_same_ip():
 def test_ip_distance_mixed():
     ret = ip_distance(IP_1, IP_2, DOMAIN)
     assert ret['distances'][(IP_1, IP_2)] > 0
-
