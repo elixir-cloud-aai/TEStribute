@@ -1,11 +1,12 @@
 # TEStribute
 
-[![Apache License](https://img.shields.io/badge/license-Apache%202.0-orange.svg?style=flat&color=important)](http://www.apache.org/licenses/LICENSE-2.0)
-[![Build Status](https://travis-ci.com/elixir-cloud-aai/TEStribute.svg?branch=dev)](https://travis-ci.com/elixir-cloud-aai/TEStribute)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
+[![Python_versions](https://img.shields.io/pypi/pyversions/TEStribute.svg?style=flat)](https://pypi.python.org/pypi/TEStribute)
+[![Build_status](https://travis-ci.com/elixir-cloud-aai/TEStribute.svg?branch=dev)](https://travis-ci.com/elixir-cloud-aai/TEStribute)
 [![Website](https://img.shields.io/website?url=http%3A%2F%2Ftestribute.c03.k8s-popup.csc.fi%2Fui%2F)](http://testribute.c03.k8s-popup.csc.fi/ui/)
-[![GitHub: latest tag](https://flat.badgen.net/github/tag/elixir-cloud-aai/TEStribute?color=cyan&icon=github)](https://github.com/elixir-cloud-aai/TEStribute/releases)
-[![PyPI](https://img.shields.io/pypi/pyversions/TEStribute.svg?style=flat)](https://pypi.python.org/pypi/TEStribute)
-[![PyPI](https://img.shields.io/pypi/v/TEStribute.svg?style=flat&color=bright-green)](https://pypi.python.org/pypi/TEStribute)
+[![GitHub_tag](https://img.shields.io/github/v/tag/elixir-cloud-aai/TEStribute?color=C39BD3)](https://github.com/elixir-cloud-aai/TEStribute/releases)
+[![PyPI_release](https://img.shields.io/pypi/v/TEStribute.svg?style=flat&color=C39BD3)](https://pypi.python.org/pypi/TEStribute)
+[![Coverage](https://img.shields.io/coveralls/github/elixir-cloud-aai/TEStribute/dev)](https://coveralls.io/github/elixir-cloud-aai/TEStribute)
 
 Task distribution for GA4GH TES instances.
 

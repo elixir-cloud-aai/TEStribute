@@ -16,11 +16,13 @@ clickclick==1.2.2
 connexion==2.3.0
 constantly==15.1.0
 coverage==5.0.3
+coveralls==1.11.1
 crochet==1.10.0
 cryptography==2.7
 cssselect==1.0.3
 decorator==4.4.0
 dicttoxml==1.7.4
+docopt==0.6.2
 docutils==0.15.2
 drs-client==0.2.0
 entrypoints==0.3

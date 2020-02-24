@@ -7,9 +7,6 @@ python:
   - "3.7"
   - "3.8"
 
-services:
-  - docker
-
 if: type != pull_request  # do not build anything for PRs
 
 install:
@@ -19,8 +16,11 @@ script:
   - mypy TEStribute setup.py --ignore-missing-imports
   - flake8 TEStribute setup.py
   - pytest --disable-warnings
+  - coverage run --source TEStribute -m pytest
+  - coveralls
 
 matrix:
+  fast_finish: true
   allow_failures:
     - python: "3.8"
 
