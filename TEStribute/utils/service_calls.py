@@ -456,7 +456,7 @@ def fetch_exchange_rates(
 
     # Convert to base BitCoin if BitCoin was base currency
     if is_bitcoin:
-        rate_btc = rates_select['BTC']
+        rate_btc = rates['BTC']
         for currency in rates_select.keys():
             if rates_select[currency]:
                 rates_select[currency] = \
