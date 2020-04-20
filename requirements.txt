@@ -2,7 +2,7 @@ addict==2.2.0
 asn1crypto==0.24.0
 astroid==2.2.5
 atomicwrites==1.3.0
-attrs==19.1.0
+attrs==19.2.0
 Automat==0.7.0
 autopep8==1.4.4
 bleach==3.1.4
@@ -51,7 +51,7 @@ jsonschema==2.6.0
 lazy-object-proxy==1.4.1
 lxml==4.3.4
 MarkupSafe==1.1.1
-maxminddb==1.4.1
+maxminddb==1.5.2
 mccabe==0.6.1
 monotonic==1.5
 more-itertools==7.2.0
@@ -94,7 +94,7 @@ swagger-ui-bundle==0.0.5
 tes-client==0.2.1
 tqdm==4.32.2
 twine==1.13.0
-Twisted==19.7.0
+Twisted==20.3.0
 typed-ast==1.4.0
 typing==3.7.4
 typing-extensions==3.7.4
