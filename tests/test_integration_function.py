@@ -14,7 +14,7 @@ RESOURCE_REQUIREMENTS = {
     "disk_gb": "25",
     "execution_time_sec": "300"
 }
-TES_URIS = ["http://193.166.24.111/ga4gh/tes/v1/"]
+TES_URIS = ["http://nginx-okd-csc-tesk-noauth.rahtiapp.fi/v2/"]
 DRS_URIS = ["http://131.152.229.71/ga4gh/drs/v1/"]
 MODE = "cost"
 
