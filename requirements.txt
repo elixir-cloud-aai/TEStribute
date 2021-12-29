@@ -29,7 +29,7 @@ entrypoints==0.3
 fido==4.2.2
 flake8==3.7.9
 Flask==1.1.1
-forex-python==1.5
+forex-python==1.8
 future==0.17.1
 geocoder==1.38.1
 geographiclib==1.49
