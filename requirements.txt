@@ -38,7 +38,7 @@ geopy==1.20.0
 hyperlink==19.0.0
 idna==2.8
 importlib-metadata==0.19
-incremental==17.5.0
+incremental==21.3.0
 inflection==0.3.1
 ip2geotools==0.1.5
 IP2Location==8.1.0
