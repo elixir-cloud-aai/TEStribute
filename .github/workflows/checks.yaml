@@ -1,0 +1,46 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Python package
+
+on:
+  push:
+    branches: [ dev ]
+  pull_request:
+    branches: [ dev ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.allow-error }}
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.6", "3.7"]
+        allow-error: [false]
+        include:
+          - python-version: "3.8"
+            allow-error: true
+        
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: python -m pip install -e .
+    - name: Test with mypy
+      run: mypy TEStribute setup.py --ignore-missing-imports
+    - name: Lint with flake8
+      run: flake8 TEStribute setup.py
+    - name: Test with pytest
+      run: pytest --disable-warnings
+    - name: Calculate coverage
+      run: |
+          coverage run --source TEStribute -m pytest
+          coverage xml
+    - name: Send coverage result to coveralls
+      env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+      run: coveralls --service=github
