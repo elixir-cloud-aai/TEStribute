@@ -34,8 +34,8 @@ jobs:
     - name: Calculate coverage
       run: |
           coverage run --source TEStribute -m pytest
-          coverage xml
-    - name: Send coverage result to coveralls
-      env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-      run: coveralls --service=github
+          coverage lcov -o ./coverage/lcov.info
+    - name: Coveralls Parallel
+      uses: coverallsapp/github-action@master
+      with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
