@@ -3,9 +3,10 @@ os:
 dist: bionic
 language: python
 python:
-  - "3.6"
   - "3.7"
   - "3.8"
+  - "3.9"
+  - "3.10"
 
 if: type != pull_request  # do not build anything for PRs
 
