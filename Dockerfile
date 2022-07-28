@@ -1,8 +1,10 @@
 ##### BASE IMAGE #####
-FROM python:3.6-slim-stretch
+# FROM python:3.6-slim-stretch
+FROM python:3.9-slim-buster
 
 ##### METADATA #####
-LABEL base.image="python:3.6-slim-stretch"
+# LABEL base.image="python:3.6-slim-stretch"
+LABEL base.image="3.9-slim-buster"
 LABEL version="1.1"
 LABEL software="TEStribute"
 LABEL software.version="0.2.1"
