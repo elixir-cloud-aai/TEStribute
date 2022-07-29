@@ -2,6 +2,7 @@ connexion==2.14.0
 coverage==6.4.2
 coveralls==3.3.1
 drs_client==0.2.0
+flake8==4.0.1
 forex_python==1.8
 geopy==2.2.0
 hiyapyco==0.5.0
