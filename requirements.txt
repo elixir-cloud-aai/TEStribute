@@ -6,6 +6,7 @@ forex_python==1.8
 geopy==2.2.0
 hiyapyco==0.5.0
 ip2geotools==0.1.6
+mypy==0.971
 numpy==1.23.1
 pytest==7.1.2
 PyJWT>=1.6.4
