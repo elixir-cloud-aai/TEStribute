@@ -45,6 +45,7 @@ def register_error_handlers(app: App) -> App:
         if (
             response.status_code == 400 and
             response.data.decode('utf-8').find('"title":') is not None and
+            response.json is not None and
             "detail" in response.json
         ):
             response = handle_bad_request_validation(response)
