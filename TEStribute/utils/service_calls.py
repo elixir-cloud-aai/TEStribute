@@ -429,9 +429,8 @@ def fetch_exchange_rates(
         rates = converter.get_rates(target_currency)
     except ConnectionError:
         logger.warning(
-            f"Could not connect to currency rates service. No exchange rates "\
-            # noqa: F541
-            f"available."  # noqa: F541
+            "Could not connect to currency rates service. No exchange rates"
+            "available."
         )
         return rates_select
 
@@ -443,9 +442,8 @@ def fetch_exchange_rates(
         )
     except ConnectionError:
         logger.warning(
-            f"Could not connect to currency rates service. No BitCoin " \
-            # noqa: F541
-            f"exchange rate available."
+            "Could not connect to currency rates service. No BitCoin "
+            "exchange rate available."
         )
         return rates_select
 
