@@ -2,7 +2,7 @@
 
 import requests
 
-UI_URL = "http://localhost:7979/ui/"
+UI_URL = "http://localhost:7979/ui"
 
 
 def test_swagger_ui_200():
