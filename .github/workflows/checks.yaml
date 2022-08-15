@@ -20,11 +20,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      run: python -m pip install -e .
+      run: |
+          python -m pip install -e .
+          pip install docker-compose
     - name: Test with mypy
       run: mypy TEStribute setup.py --ignore-missing-imports
     - name: Lint with flake8
       run: flake8 TEStribute setup.py
+    - name: Docker compose up
+      run: docker-compose up -d --build
     - name: Test with pytest
       run: pytest --disable-warnings
     - name: Calculate coverage
